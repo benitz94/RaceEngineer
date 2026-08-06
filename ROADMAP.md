@@ -1,259 +1,252 @@
-# Roadmap di RaceEngineer
+# RaceEngineer Roadmap
 
-## Principi
+## Principles
 
-La roadmap procede per verifiche progressive.
+The roadmap progresses through incremental validation.
 
-Ogni fase deve produrre un risultato osservabile e documentato prima di
-aggiungere complessità.
+Each phase must produce an observable, documented result before complexity is
+added.
 
-Il core deve essere sviluppato, testato e validato completamente senza
-dipendere da un simulatore collegato.
+The core must be fully developed, tested, and validated without depending on a
+connected simulator.
 
-Gran Turismo 7 rimane un candidato finché la verifica tecnica non ne
-confermerà la fattibilità.
+Gran Turismo 7 remains a candidate until technical evaluation confirms its
+feasibility.
 
-Il linguaggio iniziale del progetto è Python. Singoli moduli potranno essere
-sostituiti in futuro con implementazioni C++ o Rust se misure reali ne
-dimostreranno la necessità.
+The project's initial language is Python. Individual modules may be replaced
+in the future with C++ or Rust implementations if real-world measurements
+demonstrate the need.
 
-Durante tutte le fasi, le priorità sono:
+Throughout all phases, the priorities are:
 
-1. stabilità;
-2. affidabilità;
-3. funzionalità aggiuntive.
+1. stability;
+2. reliability;
+3. additional features.
 
-La reattività non deve essere sacrificata per caratteristiche non essenziali.
+Responsiveness must not be sacrificed for nonessential features.
 
-## Fase 0 — Documentazione e fondamenta del progetto
+## Phase 0 — Project Documentation and Foundations
 
-Obiettivo: rendere espliciti scopo, vincoli e criteri decisionali prima
-dell'implementazione.
+Goal: make the scope, constraints, and decision criteria explicit before
+implementation.
 
-Attività:
+Activities:
 
-- completare README, ARCHITECTURE e ROADMAP;
-- registrare nel PROJECT_JOURNAL le decisioni approvate;
-- scegliere e aggiungere una licenza open source;
-- definire il processo per documentare le decisioni;
-- definire i requisiti minimi del primo prototipo;
-- definire la struttura iniziale del progetto Python;
-- scegliere le librerie iniziali solo dopo averne verificato la compatibilità
-  con Raspberry Pi 3B+;
-- documentare la configurazione hardware disponibile.
+- complete the README, ARCHITECTURE, and ROADMAP;
+- record approved decisions in the PROJECT_JOURNAL;
+- select and add an open-source license;
+- define the process for documenting decisions;
+- define the minimum requirements for the first prototype;
+- define the initial Python project structure;
+- select initial libraries only after verifying their compatibility with the
+  Raspberry Pi 3B+;
+- document the available hardware configuration.
 
-Criteri di completamento:
+Completion criteria:
 
-- scopo e fuori ambito del prototipo sono documentati;
-- le assunzioni ancora aperte sono riconoscibili;
-- Python è documentato come tecnologia iniziale e non come vincolo
-  permanente;
-- la licenza è stata scelta;
-- l'ambiente di sviluppo iniziale è stato definito;
-- nessuna libreria è obbligatoria senza motivazione documentata.
+- the prototype's scope and out-of-scope items are documented;
+- open assumptions are identifiable;
+- Python is documented as the initial technology rather than a permanent
+  constraint;
+- the license has been selected;
+- the initial development environment has been defined;
+- no library is mandatory without documented rationale.
 
-## Fase 1 — Pipeline deterministica con telemetria sintetica
+## Phase 1 — Deterministic Pipeline with Synthetic Telemetry
 
-Obiettivo: dimostrare il flusso completo senza simulatore reale.
+Goal: demonstrate the complete flow without a real simulator.
 
-Attività:
+Activities:
 
-- definire la prima versione del modello interno di telemetria;
-- creare una sorgente di telemetria sintetica;
-- costruire lo stato minimo della sessione;
-- implementare almeno una regola deterministica;
-- produrre un avviso strutturato;
-- fornire output testuale;
-- registrare eventi ed errori localmente;
-- creare scenari ripetibili per comportamento normale e dati non validi.
+- define the first version of the internal telemetry model;
+- create a synthetic telemetry source;
+- build the minimum session state;
+- implement at least one deterministic rule;
+- produce a structured alert;
+- provide text output;
+- record events and errors locally;
+- create repeatable scenarios for normal behavior and invalid data.
 
-Criteri di completamento:
+Completion criteria:
 
-- lo stesso scenario produce sempre lo stesso risultato;
-- il core funziona senza Internet e senza LLM;
-- dati mancanti o non validi non causano decisioni inventate;
-- gli eventi possono essere verificati automaticamente;
-- la pipeline non contiene dipendenze da un simulatore specifico.
+- the same scenario always produces the same result;
+- the core operates without Internet access and without an LLM;
+- missing or invalid data does not cause fabricated decisions;
+- events can be verified automatically;
+- the pipeline contains no dependencies on a specific simulator.
 
-## Fase 2 — Replay di telemetria registrata
+## Phase 2 — Recorded Telemetry Replay
 
-Obiettivo: testare il core con sequenze realistiche e riproducibili senza
-collegare un simulatore.
+Goal: test the core with realistic, reproducible sequences without connecting
+a simulator.
 
-Attività:
+Activities:
 
-- definire un formato locale e versionato per le registrazioni;
-- implementare avvio, pausa, arresto e velocità di replay;
-- conservare timestamp e informazioni sulla sorgente;
-- gestire campioni duplicati, mancanti o fuori ordine;
-- misurare tempi di elaborazione e stabilità;
-- preparare registrazioni di test prive di dati sensibili o non
-  distribuibili.
+- define a local, versioned recording format;
+- implement replay start, pause, stop, and speed control;
+- preserve timestamps and source information;
+- handle duplicate, missing, or out-of-order samples;
+- measure processing times and stability;
+- prepare test recordings free of sensitive or non-distributable data.
 
-Criteri di completamento:
+Completion criteria:
 
-- una registrazione può essere riprodotta più volte;
-- i risultati sono ripetibili;
-- il sistema gestisce interruzioni e dati imperfetti;
-- il formato e il suo versionamento sono documentati;
-- il replay utilizza lo stesso modello interno previsto per le future
-  sorgenti reali.
+- a recording can be replayed multiple times;
+- results are repeatable;
+- the system handles interruptions and imperfect data;
+- the format and its versioning are documented;
+- replay uses the same internal model intended for future real sources.
 
-## Fase 3 — Output vocale locale
+## Phase 3 — Local Voice Output
 
-Obiettivo: consegnare gli avvisi al pilota senza servizi cloud obbligatori.
+Goal: deliver alerts to the driver without mandatory cloud services.
 
-Attività:
+Activities:
 
-- valutare motori TTS locali compatibili con Raspberry Pi 3B+;
-- scegliere una voce italiana iniziale;
-- aggiungere un adattatore TTS separato dal core;
-- gestire priorità, accodamento e soppressione degli avvisi duplicati;
-- verificare l'uscita tramite DAC, mixer e cuffie;
-- misurare la latenza tra evento e riproduzione.
+- evaluate local TTS engines compatible with the Raspberry Pi 3B+;
+- select an initial Italian voice;
+- add a TTS adapter separate from the core;
+- manage alert priority, queuing, and duplicate suppression;
+- verify output through the DAC, mixer, and headphones;
+- measure event-to-playback latency.
 
-Criteri di completamento:
+Completion criteria:
 
-- almeno un evento genera un avviso vocale locale;
-- un guasto del TTS non blocca il core;
-- l'avviso rimane disponibile tramite log e output testuale;
-- consumo di risorse e latenza sono documentati.
+- at least one event generates a local voice alert;
+- a TTS failure does not block the core;
+- the alert remains available through the log and text output;
+- resource usage and latency are documented.
 
-## Fase 4 — Validazione completa sul Raspberry Pi 3B+
+## Phase 4 — Complete Validation on Raspberry Pi 3B+
 
-Obiettivo: verificare il funzionamento autonomo e continuativo del core
-sull'hardware iniziale prima di integrare un simulatore reale.
+Goal: verify self-contained, continuous core operation on the initial hardware
+before integrating a real simulator.
 
-La validazione userà telemetria sintetica e registrata.
+Validation will use synthetic and recorded telemetry.
 
-Attività:
+Activities:
 
-- installare il core sul Raspberry Pi 3B+;
-- configurare l'avvio automatico;
-- verificare la pipeline con telemetria sintetica;
-- verificare il replay di telemetria registrata;
-- verificare l'output testuale e vocale locale;
-- eseguire test prolungati;
-- misurare CPU, memoria, latenza, temperatura e spazio locale;
-- verificare Wi-Fi ed Ethernet;
-- verificare comportamento dopo riavvio e perdita della sorgente;
-- verificare la degradazione in caso di errore TTS;
-- documentare hardware obbligatorio e opzionale;
-- identificare eventuali limiti che richiedano ottimizzazione;
-- valutare la sostituzione di singoli moduli Python con C++ o Rust soltanto
-  se giustificata dalle misure.
+- install the core on the Raspberry Pi 3B+;
+- configure automatic startup;
+- verify the pipeline with synthetic telemetry;
+- verify recorded telemetry replay;
+- verify local text and voice output;
+- run extended tests;
+- measure CPU, memory, latency, temperature, and local storage;
+- verify Wi-Fi and Ethernet;
+- verify behavior after a restart and source loss;
+- verify degradation in the event of a TTS error;
+- document mandatory and optional hardware;
+- identify any limitations that require optimization;
+- evaluate replacing individual Python modules with C++ or Rust only when
+  justified by measurements.
 
-Criteri di completamento:
+Completion criteria:
 
-- il sistema parte senza il PC di sviluppo;
-- non richiede Internet per il funzionamento base;
-- il core funziona usando telemetria sintetica e registrata;
-- recupera dagli errori previsti;
-- un guasto dell'output vocale non blocca l'analisi;
-- prestazioni e limiti del Raspberry Pi 3B+ sono documentati;
-- eventuali ottimizzazioni sono motivate da misure reali;
-- un altro utente può replicare il banco di prova seguendo la guida;
-- il core è considerato validato prima del collegamento a un simulatore
-  reale.
+- the system starts without the development PC;
+- it does not require Internet access for basic operation;
+- the core operates using synthetic and recorded telemetry;
+- it recovers from anticipated errors;
+- a voice-output failure does not block analysis;
+- Raspberry Pi 3B+ performance and limitations are documented;
+- any optimizations are justified by real-world measurements;
+- another user can reproduce the test bench by following the guide;
+- the core is considered validated before connection to a real simulator.
 
-## Fase 5 — Verifica tecnica del primo simulatore reale
+## Phase 5 — Technical Evaluation of the First Real Simulator
 
-Obiettivo: decidere quale simulatore possa diventare il primo ufficialmente
-supportato.
+Goal: decide which simulator can become the first officially supported one.
 
-Il candidato attuale è Gran Turismo 7, ma non è ancora un requisito
-definitivo.
+The current candidate is Gran Turismo 7, but it is not yet a definitive
+requirement.
 
-Attività:
+Activities:
 
-- verificare il meccanismo di trasmissione della telemetria;
-- identificare piattaforme e configurazioni supportate;
-- identificare campi, frequenza e formato disponibili;
-- verificare la ricezione via rete locale;
-- studiare perdita, duplicazione e ordine dei dati;
-- verificare l'identificazione di sessione, giro e vettura;
-- controllare stabilità rispetto agli aggiornamenti del gioco;
-- verificare eventuali trasformazioni o decodifiche necessarie;
-- verificare aspetti di licenza, distribuzione e documentazione;
-- acquisire una breve registrazione tecnica, se legalmente e tecnicamente
-  possibile;
-- misurare la ricezione sul Raspberry Pi 3B+;
-- documentare risultati, limiti e rischi.
+- evaluate the telemetry transmission mechanism;
+- identify supported platforms and configurations;
+- identify the available fields, frequency, and format;
+- verify reception over the local network;
+- investigate data loss, duplication, and ordering;
+- verify session, lap, and car identification;
+- check stability across game updates;
+- evaluate any required transformations or decoding;
+- evaluate licensing, distribution, and documentation considerations;
+- capture a short technical recording, if legally and technically possible;
+- measure reception on the Raspberry Pi 3B+;
+- document results, limitations, and risks.
 
-Criteri di completamento:
+Completion criteria:
 
-- esiste un rapporto tecnico riproducibile;
-- è noto quali dati utili siano realmente disponibili;
-- sono documentati rischi tecnici e legali;
-- la sorgente reale può essere ricondotta al modello interno senza
-  introdurre logica specifica nel core;
-- viene presa e registrata una decisione esplicita:
+- a reproducible technical report exists;
+- the useful data that is actually available is known;
+- technical and legal risks are documented;
+- the real source can be mapped to the internal model without introducing
+  source-specific logic into the core;
+- an explicit decision is made and recorded:
 
-  - adottare GT7 come primo simulatore;
-  - rimandarne il supporto;
-  - scegliere un altro simulatore.
+  - adopt GT7 as the first simulator;
+  - postpone support for it;
+  - select another simulator.
 
-## Fase 6 — Adattatore del primo simulatore approvato
+## Phase 6 — Adapter for the First Approved Simulator
 
-Obiettivo: collegare il primo simulatore reale senza modificare il core già
-validato.
+Goal: connect the first real simulator without modifying the already validated
+core.
 
-Attività:
+Activities:
 
-- implementare l'adattatore del simulatore scelto;
-- convertire i dati reali nel modello interno;
-- gestire connessione, disconnessione e ripresa;
-- gestire dati mancanti, duplicati o fuori ordine;
-- confrontare dati reali e registrati;
-- eseguire una sessione end-to-end;
-- misurare latenza e utilizzo delle risorse sul Raspberry Pi 3B+;
-- documentare configurazione di console o simulatore, rete e Raspberry Pi.
+- implement the adapter for the selected simulator;
+- convert real data into the internal model;
+- handle connection, disconnection, and resumption;
+- handle missing, duplicate, or out-of-order data;
+- compare real and recorded data;
+- run an end-to-end session;
+- measure latency and resource usage on the Raspberry Pi 3B+;
+- document console or simulator, network, and Raspberry Pi configuration.
 
-Criteri di completamento:
+Completion criteria:
 
-- il core non contiene parsing specifico del simulatore;
-- l'adattatore utilizza la stessa interfaccia delle sorgenti sintetiche e
-  registrate;
-- la disconnessione non arresta il servizio;
-- una sessione reale produce eventi e avvisi locali;
-- prestazioni e latenza restano compatibili con i risultati della
-  validazione;
-- installazione e configurazione sono ripetibili.
+- the core contains no simulator-specific parsing;
+- the adapter uses the same interface as synthetic and recorded sources;
+- disconnection does not stop the service;
+- a real session produces local events and alerts;
+- performance and latency remain compatible with the validation results;
+- installation and configuration are reproducible.
 
-## Fasi successive
+## Subsequent Phases
 
-Le fasi successive verranno dettagliate soltanto dopo la validazione del
-prototipo e del primo adattatore reale.
+Subsequent phases will be detailed only after validation of the prototype and
+the first real adapter.
 
-Possibili direzioni:
+Possible directions:
 
-- più regole e strategie;
-- analisi post-sessione;
-- memoria del pilota;
-- gestione dei setup;
-- profili vocali;
-- riconoscimento vocale;
-- dashboard web o applicazione;
-- supporto ad altri simulatori;
-- LLM locale o remoto opzionale;
-- distribuzione tramite immagine pronta o installer;
-- supporto a Raspberry Pi 5 e mini-PC.
+- additional rules and strategies;
+- post-session analysis;
+- driver memory;
+- setup management;
+- voice profiles;
+- speech recognition;
+- web dashboard or application;
+- support for other simulators;
+- optional local or remote LLM;
+- distribution through a ready-to-use image or installer;
+- support for Raspberry Pi 5 and mini PCs.
 
-Queste voci rappresentano possibilità future, non requisiti già approvati.
+These items represent future possibilities, not already approved requirements.
 
-## Decisioni ancora necessarie
+## Decisions Still Required
 
-Prima o durante le prime fasi dovranno essere decisi:
+The following must be decided before or during the initial phases:
 
-- licenza open source;
-- ambiente di esecuzione Python;
-- sistema operativo iniziale;
-- struttura iniziale del progetto;
-- librerie iniziali;
-- schema della telemetria interna;
-- formato delle registrazioni;
-- prima regola del prototipo;
-- motore TTS locale;
-- criteri quantitativi di prestazione;
-- simulatore iniziale dopo la verifica tecnica;
-- modalità finale di distribuzione.
+- open-source license;
+- Python runtime environment;
+- initial operating system;
+- initial project structure;
+- initial libraries;
+- internal telemetry schema;
+- recording format;
+- first prototype rule;
+- local TTS engine;
+- quantitative performance criteria;
+- initial simulator following technical evaluation;
+- final distribution method.

@@ -1,214 +1,206 @@
 # RaceEngineer
 
-RaceEngineer nasce dall'idea di portare un vero ingegnere di pista personale
-accanto al pilota, privilegiando affidabilità, replicabilità e funzionamento
-locale rispetto alla complessità tecnologica.
+RaceEngineer was conceived to bring a true personal race engineer alongside
+the driver, prioritizing reliability, reproducibility, and local operation over
+technological complexity.
 
-Lo scopo del progetto non è dimostrare l'uso dell'intelligenza artificiale,
-ma costruire uno strumento realmente utile durante una sessione di guida.
+The purpose of the project is not to demonstrate the use of artificial
+intelligence, but to build a genuinely useful tool for driving sessions.
 
-RaceEngineer è un progetto locale e open source per il sim racing.
+RaceEngineer is a local, open-source project for sim racing.
 
-Il suo obiettivo è ricevere la telemetria di un simulatore, analizzarla con
-logica deterministica e fornire al pilota informazioni utili durante e dopo
-la sessione.
+Its goal is to receive telemetry from a simulator, analyze it using
+deterministic logic, and provide the driver with useful information during and
+after the session.
 
-Il progetto è pensato come una piattaforma autonoma e replicabile, eseguibile
-inizialmente su Raspberry Pi 3B+.
+The project is designed as a self-contained, reproducible platform, initially
+running on a Raspberry Pi 3B+.
 
-## Stato del progetto
+## Project Status
 
-RaceEngineer è attualmente in fase di progettazione e prototipazione.
+RaceEngineer is currently in the design and prototyping phase.
 
-Non esiste ancora una prima versione utilizzabile.
+No usable initial version exists yet.
 
-Gran Turismo 7 è il simulatore iniziale candidato, ma il suo supporto non è
-ancora un requisito definitivo. Prima sarà necessario verificare
-tecnicamente disponibilità, formato, stabilità e condizioni d'uso della
-telemetria.
+Gran Turismo 7 is the initial candidate simulator, but support for it is not
+yet a definitive requirement. The availability, format, stability, and terms
+of use of its telemetry must first be technically evaluated.
 
-Il core sarà sviluppato, testato e validato inizialmente usando telemetria
-sintetica o registrata, senza richiedere un collegamento a un simulatore
-reale.
+The core will initially be developed, tested, and validated using synthetic or
+recorded telemetry, without requiring a connection to a real simulator.
 
-## Tecnologia iniziale
+## Initial Technology
 
-Il linguaggio iniziale del progetto è Python.
+The project's initial language is Python.
 
-La scelta è motivata da:
+This choice is motivated by:
 
-- rapidità di sviluppo;
-- compatibilità con Raspberry Pi;
-- integrazione con AI, Ollama, STT e TTS;
-- disponibilità di un ampio ecosistema di librerie.
+- rapid development;
+- Raspberry Pi compatibility;
+- integration with AI, Ollama, STT, and TTS;
+- availability of a broad library ecosystem.
 
-Python è la tecnologia iniziale del progetto, non un vincolo permanente.
+Python is the project's initial technology, not a permanent constraint.
 
-L'architettura dovrà permettere di sostituire in futuro singoli moduli con
-implementazioni in C++ o Rust, qualora misure reali dimostrino che le
-prestazioni lo rendono necessario.
+The architecture must allow individual modules to be replaced in the future
+with C++ or Rust implementations if real-world measurements demonstrate that
+performance requirements make this necessary.
 
-## Obiettivi
+## Goals
 
-RaceEngineer dovrà poter:
+RaceEngineer must be able to:
 
-- funzionare senza dipendere dal PC utilizzato per lo sviluppo;
-- funzionare senza servizi cloud obbligatori;
-- ricevere telemetria via rete locale da una console o da un simulatore;
-- analizzare la telemetria completamente in locale;
-- generare avvisi tramite regole deterministiche e verificabili;
-- riprodurre avvisi vocali locali;
-- conservare dati utili delle sessioni;
-- essere esteso in futuro a più simulatori e piattaforme hardware;
-- essere installato e replicato seguendo la documentazione ufficiale.
+- operate independently of the PC used for development;
+- operate without mandatory cloud services;
+- receive telemetry over the local network from a console or simulator;
+- analyze telemetry entirely locally;
+- generate alerts through deterministic, verifiable rules;
+- play local voice alerts;
+- retain useful session data;
+- be extended to additional simulators and hardware platforms in the future;
+- be installed and reproduced by following the official documentation.
 
-## Principi del progetto
+## Project Principles
 
-### Utilità prima della complessità
+### Utility Before Complexity
 
-RaceEngineer deve essere prima di tutto uno strumento utile durante una
-sessione di guida.
+Above all, RaceEngineer must be a useful tool during a driving session.
 
-Tecnologie, AI e funzionalità aggiuntive hanno valore soltanto quando
-migliorano concretamente l'esperienza del pilota senza compromettere il
-funzionamento del sistema.
+Technologies, AI, and additional features have value only when they tangibly
+improve the driver's experience without compromising system operation.
 
-### Locale prima di tutto
+### Local First
 
-Il core deve continuare a funzionare senza connessione Internet.
+The core must continue to operate without an Internet connection.
 
-Eventuali integrazioni online dovranno essere facoltative e non dovranno
-essere necessarie per le funzioni principali.
+Any online integrations must be optional and must not be required for core
+functionality.
 
-### Nessun LLM nel percorso critico
+### No LLM in the Critical Path
 
-RaceEngineer non richiede un LLM per analizzare la telemetria o prendere
-decisioni critiche durante la gara.
+RaceEngineer does not require an LLM to analyze telemetry or make critical
+decisions during a race.
 
-Un eventuale LLM potrà essere aggiunto come modulo opzionale per funzioni
-come:
+An LLM may be added as an optional module for features such as:
 
-- riformulazione naturale dei messaggi;
-- spiegazioni dopo la sessione;
-- conversazione;
-- consultazione assistita dei dati.
+- natural rephrasing of messages;
+- post-session explanations;
+- conversation;
+- assisted data exploration.
 
-L'assenza o il malfunzionamento dell'LLM non dovrà impedire al core di
-funzionare.
+The absence or failure of the LLM must not prevent the core from operating.
 
-### Performance first
+### Performance First
 
-Ogni nuova funzionalità deve essere valutata anche rispetto alle risorse
-disponibili sull'hardware di riferimento.
+Every new feature must also be evaluated against the resources available on
+the reference hardware.
 
-L'ordine delle priorità è:
+The priority order is:
 
-1. stabilità;
-2. affidabilità;
-3. funzionalità aggiuntive.
+1. stability;
+2. reliability;
+3. additional features.
 
-RaceEngineer non deve sacrificare la reattività del sistema per aggiungere
-caratteristiche non essenziali.
+RaceEngineer must not sacrifice system responsiveness to add nonessential
+features.
 
-### Indipendenza dal simulatore
+### Simulator Independence
 
-Il core deve poter essere sviluppato, testato e validato completamente senza
-un simulatore collegato.
+The core must be fully developable, testable, and validatable without a
+connected simulator.
 
-Le integrazioni con i simulatori devono essere realizzate tramite adattatori
-separati e non devono introdurre logica specifica nel core.
+Simulator integrations must be implemented through separate adapters and must
+not introduce simulator-specific logic into the core.
 
-### Indipendenza dall'hardware
+### Hardware Independence
 
-La piattaforma iniziale è Raspberry Pi 3B+, ma l'architettura non deve
-dipendere da uno specifico modello di computer.
+The initial platform is the Raspberry Pi 3B+, but the architecture must not
+depend on a specific computer model.
 
-L'hardware potrà evolvere sulla base di misure reali di prestazioni e
-necessità.
+The hardware may evolve based on real-world performance measurements and
+needs.
 
-Allo stesso modo, singoli moduli Python potranno essere sostituiti in futuro
-da implementazioni C++ o Rust senza richiedere la riscrittura dell'intero
-sistema.
+Similarly, individual Python modules may be replaced in the future by C++ or
+Rust implementations without requiring the entire system to be rewritten.
 
-### Modularità
+### Modularity
 
-Le sorgenti di telemetria, il core di analisi, la persistenza e i sistemi di
-output devono essere separati.
+Telemetry sources, the analysis core, persistence, and output systems must be
+separate.
 
-Aggiungere un nuovo simulatore, cambiare il sistema audio o sostituire
-l'implementazione di un modulo non dovrebbe richiedere la riscrittura della
-logica principale.
+Adding a new simulator, changing the audio system, or replacing a module's
+implementation should not require the core logic to be rewritten.
 
-### Replicabilità
+### Reproducibility
 
-Il progetto non distribuirà soltanto codice.
+The project will distribute more than code alone.
 
-Hardware, sistema operativo, installazione, configurazione e problemi noti
-dovranno essere documentati in modo che un altro utente possa costruire un
-sistema funzionante senza assistenza diretta.
+Hardware, operating system, installation, configuration, and known issues must
+be documented so that another user can build a working system without direct
+assistance.
 
-## Primo prototipo
+## First Prototype
 
-Il primo prototipo sarà una pipeline locale minima:
+The first prototype will be a minimal local pipeline:
 
-1. caricare o generare telemetria;
-2. riprodurla con tempi controllati;
-3. convertirla in un formato interno comune;
-4. aggiornare lo stato della sessione;
-5. riconoscere almeno un evento tramite una regola deterministica;
-6. produrre un avviso testuale;
-7. quando disponibile, riprodurre lo stesso avviso tramite TTS locale;
-8. registrare eventi, avvisi e dati diagnostici.
+1. load or generate telemetry;
+2. replay it with controlled timing;
+3. convert it into a common internal format;
+4. update the session state;
+5. detect at least one event through a deterministic rule;
+6. produce a text alert;
+7. when available, play the same alert through local TTS;
+8. record events, alerts, and diagnostic data.
 
-Il prototipo non includerà inizialmente:
+The prototype will not initially include:
 
-- riconoscimento vocale;
-- LLM;
-- servizi cloud obbligatori;
-- dashboard completa;
-- strategie avanzate;
-- memoria adattiva del pilota;
-- gestione musicale;
-- supporto simultaneo a più simulatori.
+- speech recognition;
+- an LLM;
+- mandatory cloud services;
+- a complete dashboard;
+- advanced strategies;
+- adaptive driver memory;
+- music management;
+- simultaneous support for multiple simulators.
 
-## Hardware iniziale previsto
+## Planned Initial Hardware
 
-Banco di prova iniziale:
+Initial test bench:
 
 - Raspberry Pi 3B+;
-- alimentatore;
-- microSD, capacità e classe da definire;
-- connessione Ethernet o Wi-Fi;
-- microfono USB lavalier, non necessario per il primo prototipo;
-- DAC USB verso mixer;
-- mixer audio;
-- cuffie;
-- eventuale dissipatore o ventola.
+- power supply;
+- microSD card, capacity and class to be determined;
+- Ethernet or Wi-Fi connection;
+- USB lavalier microphone, not required for the first prototype;
+- USB DAC connected to a mixer;
+- audio mixer;
+- headphones;
+- optional heat sink or fan.
 
-Modelli, alternative, obbligatorietà e configurazione dei componenti saranno
-documentati durante lo sviluppo.
+Component models, alternatives, requirements, and configuration will be
+documented during development.
 
-## Documentazione
+## Documentation
 
-- `PROJECT_JOURNAL.md`: origine, intenzioni e motivazioni delle decisioni;
-- `ARCHITECTURE.md`: componenti, confini e flussi del sistema;
-- `ROADMAP.md`: fasi di sviluppo e criteri di completamento;
-- `AGENTS.md`: regole operative per chi lavora nel repository.
+- `PROJECT_JOURNAL.md`: origins, intentions, and decision rationale;
+- `ARCHITECTURE.md`: system components, boundaries, and flows;
+- `ROADMAP.md`: development phases and completion criteria;
+- `AGENTS.md`: operating rules for repository contributors.
 
-`PROJECT_JOURNAL.md` è la fonte principale per l'intento e la storia delle
-decisioni.
+`PROJECT_JOURNAL.md` is the primary source for the project's intent and
+decision history.
 
-## Progetti separati
+## Separate Projects
 
-RaceEngineer non è la Companion AI nata dagli esperimenti con
-Open-LLM-VTuber.
+RaceEngineer is not the AI Desktop Companion created through the Open-LLM-VTuber
+experiments.
 
-I due progetti devono rimanere indipendenti. Eventuale codice riutilizzato
-dovrà essere importato in modo esplicito, documentato e compatibile con la
-licenza scelta per RaceEngineer.
+The two projects must remain independent. Any reused code must be imported
+explicitly, documented, and compatible with the license selected for
+RaceEngineer.
 
-## Licenza
+## License
 
-Il repository è destinato a essere open source.
+The repository is intended to be open source.
 
-La licenza non è ancora stata scelta.
+The license has not yet been selected.

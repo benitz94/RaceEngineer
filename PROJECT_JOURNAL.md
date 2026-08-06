@@ -1,470 +1,475 @@
 # PROJECT_JOURNAL.md
 
-# RaceEngineer - Diario di Progettazione
+# RaceEngineer - Design Journal
 
-> Documento vivo. Non cancellare le idee: commentarle con `//`
-> aggiungendo sempre il motivo. Questo documento racconta COME è nato il
-> progetto.
-
-------------------------------------------------------------------------
-
-# Origine del progetto
-
-L'idea iniziale non era RaceEngineer.
-
-Le prime prove sono nate installando Open-LLM-VTuber con Ollama per
-capire se fosse possibile avere una companion AI completamente locale.
-
-Durante questi test è nata una domanda:
-
-"Se invece di una semplice waifu costruissimo un vero assistente?"
-
-Da quel momento il progetto ha iniziato a cambiare.
+> Living document. Do not delete ideas: comment them out with `//`,
+> always adding the reason. This document explains HOW the project came to be.
 
 ------------------------------------------------------------------------
 
-# Companion AI
+# Project Origin
 
-La Companion AI NON è RaceEngineer.
+The original idea was not RaceEngineer.
 
-È un progetto separato.
+The first experiments involved installing Open-LLM-VTuber with Ollama to
+determine whether a completely local AI Desktop Companion was possible.
 
-Motivo:
+During these tests, a question arose:
 
--   può essere usata anche fuori dal sim racing;
--   permette di sperimentare STT, TTS e LLM;
--   parte del codice potrà essere riutilizzata da RaceEngineer.
+"What if, instead of a simple AI Desktop Companion, we built a real assistant?"
 
-Decisione: Mantenere i due progetti separati.
+From that moment, the project began to change.
+
+------------------------------------------------------------------------
+
+# AI Desktop Companion
+
+AI Desktop Companion is NOT RaceEngineer.
+
+It is a separate project.
+
+Reason:
+
+-   it can also be used outside sim racing;
+-   it enables experimentation with STT, TTS, and LLMs;
+-   some of its code may be reused by RaceEngineer.
+
+Decision: Keep the two projects separate.
 
 ------------------------------------------------------------------------
 
 # Open-LLM-VTuber
 
-Attività svolte:
+Work completed:
 
--   installazione Git
--   configurazione GitHub
--   installazione Python
--   installazione uv
--   installazione FFmpeg
--   configurazione Ollama
--   installazione Open-LLM-VTuber
--   configurazione del modello Qwen
--   problemi iniziali con MCP
--   disattivazione MCP per far partire il sistema
--   personalizzazione del prompt di Mao
--   traduzione in italiano
--   prove con Edge TTS
+-   Git installation
+-   GitHub configuration
+-   Python installation
+-   uv installation
+-   FFmpeg installation
+-   Ollama configuration
+-   Open-LLM-VTuber installation
+-   Qwen model configuration
+-   initial MCP issues
+-   disabling MCP to get the system running
+-   customization of Mao's prompt
+-   translation into Italian
+-   tests with Edge TTS
 
-Problemi riscontrati:
+Issues encountered:
 
--   voce inglese
--   TTS italiano non soddisfacente
--   errori casuali durante la conversazione
--   microfono webcam poco affidabile
+-   English voice
+-   unsatisfactory Italian TTS
+-   random errors during conversation
+-   unreliable webcam microphone
 
-Decisione:
+Decision:
 
-Acquistare un microfono lavalier USB dedicato.
-
-------------------------------------------------------------------------
-
-# Microfono
-
-Idea iniziale ChatGPT:
-
-Microfono USB da tavolo.
-
-Commento Benito:
-
-// Preferisco un lavalier. Non voglio un microfono davanti mentre
-programmo o mentre gioco.
-
-Decisione finale:
-
-Acquistato un lavalier USB MillSO.
-
-Da verificare all'arrivo.
+Purchase a dedicated USB lavalier microphone.
 
 ------------------------------------------------------------------------
 
-# Nascita di RaceEngineer
+# Microphone
 
-Durante la discussione è nata l'idea di costruire un ingegnere di pista
-personale.
+ChatGPT's initial idea:
 
-Prima ipotesi:
+Desktop USB microphone.
 
-Usare il PC principale.
+Benito's comment:
 
-Decisione successiva proposta da Benito:
+// I prefer a lavalier. I do not want a microphone in front of me while
+programming or gaming.
 
-Il PC dovrà servire SOLO per sviluppare.
+Final decision:
 
-La piattaforma inizale dovrà essere Raspberry Pi, successivamente
-valutare l'utilizzo di un mini-pc o altro hardware a seconda delle
-performance necessarie e alle esigenze.
+Purchased a MillSO USB lavalier microphone.
 
-Questa è diventata una delle decisioni più importanti dell'intero
-progetto.
+To be tested upon arrival.
+
+------------------------------------------------------------------------
+
+# Birth of RaceEngineer
+
+During the discussion, the idea emerged to build a personal race engineer.
+
+Initial hypothesis:
+
+Use the main PC.
+
+Subsequent decision proposed by Benito:
+
+The PC must be used ONLY for development.
+
+The initial platform must be a Raspberry Pi; the use of a mini PC or other
+hardware will subsequently be evaluated according to performance requirements
+and needs.
+
+This became one of the most important decisions in the entire project.
 
 ------------------------------------------------------------------------
 
 # Raspberry Pi
 
-Banco di prova.
+Test bench.
 
-Il software dovrà funzionare in maniera standalone.
+The software must operate as a standalone system.
 
-Nessuna dipendenza dal PC.
+No dependency on the PC.
 
-Il PC servirà solo per:
+The PC will be used only for:
 
--   sviluppo
--   test
--   debug
+-   development
+-   testing
+-   debugging
 
-Questa decisione influenza tutta l'architettura.
+This decision affects the entire architecture.
 
 ------------------------------------------------------------------------
 
-# Filosofia
+# Philosophy
 
-Ogni nuova funzione dovrà essere progettata pensando:
+Every new feature must be designed by asking:
 
-"Gira sull'hardware?"
+"Will it run on the hardware?"
 
-Se la risposta è NO:
+If the answer is NO:
 
-capire se:
+determine whether:
 
--   è davvero necessaria;
--   può essere riscritta;
--   occorre potenziare l'hardware?
+-   it is truly necessary;
+-   it can be rewritten;
+-   the hardware needs to be upgraded.
 
 ------------------------------------------------------------------------
 
 # AI
 
-Discussione importante.
+Important discussion.
 
-Obiezione:
+Objection:
 
-"Bisogna addestrare un modello."
+"A model must be trained."
 
-Conclusione:
+Conclusion:
 
 NO.
 
-RaceEngineer non dovrà creare un nuovo LLM.
+RaceEngineer must not create a new LLM.
 
-Dovrà usare modelli esistenti.
+It must use existing models.
 
-Il valore del progetto sarà:
+The project's value will be:
 
--   logica
--   telemetria
--   memoria
--   esperienza utente
--   integrazione
+-   logic
+-   telemetry
+-   memory
+-   user experience
+-   integration
 
-NON l'addestramento del modello.
+NOT model training.
 
 ------------------------------------------------------------------------
 
 # Codex
 
-Usare Codex direttamente dentro VS Code.
+Use Codex directly inside VS Code.
 
 ChatGPT:
 
-favorevole.
+in favor.
 
-Ruoli decisi:
+Roles established:
 
 Benito: Product Owner.
 
 Codex:
 
--   implementazione
--   codice
+-   implementation
+-   code
 -   refactoring
--   test
+-   testing
 
 ChatGPT:
 
--   architettura
--   progettazione
--   revisione
--   documentazione
--   decisioni tecniche
+-   architecture
+-   design
+-   review
+-   documentation
+-   technical decisions
 
 ------------------------------------------------------------------------
 
 # GitHub
 
-Decisione:
+Decision:
 
-Repository pubblico.
+Public repository.
 
-Motivo:
+Reason:
 
--   cronologia
--   collaborazione
--   progetto open source
+-   history
+-   collaboration
+-   open-source project
 
 ------------------------------------------------------------------------
 
-# Documentazione
+# Documentation
 
-Decisione importante.
+Important decision.
 
-Scrivere la documentazione PRIMA del codice.
+Write documentation BEFORE code.
 
-Documenti previsti:
+Planned documents:
 
 README.md PROJECT_CONTEXT.md ARCHITECTURE.md ROADMAP.md AGENTS.md
 CHANGELOG.md PROJECT_JOURNAL.md
 
 ------------------------------------------------------------------------
 
-# Idee annotate
+# Recorded Ideas
 
--   Companion desktop ai waifu per facilitare il coding con commenti e
-    suggerimenti.
--   Apertura automatica di VS Code.
--   Apertura repository GitHub.
--   Controllo Git.
--   Memoria delle sessioni al simulatore.
--   Database setup GT7, F1, etc.
--   Strategie carburante.
--   Strategie gomme.
--   Srategie pit stop.
--   Dashboard web o app per test hardware sul telefono.
--   Controllo e gestione musica e playlist con comandi vocali.
--   Supporto futuro ad altri simulatori.
--   Sistema modulare.
--   Interagire con il race engineer con il microfono.
--   Creazione di vari profili di race engineer in base a lingua, tono,
-    stile, etc.
--   Il race engineer deve adattarsi al pilota, dare suggerimenti, nel
-    caso faccia fatica ad applicare i suggerimenti trovare altre
-    soluzioni più semplici, e segnalare errori di guida sul giro.
+-   AI Desktop Companion to facilitate coding with comments and
+    suggestions.
+-   Automatic opening of VS Code.
+-   Opening the GitHub repository.
+-   Git control.
+-   Memory of simulator sessions.
+-   GT7, F1, etc. setup database.
+-   Fuel strategies.
+-   Tire strategies.
+-   Pit stop strategies.
+-   Web dashboard or app for hardware tests on a phone.
+-   Voice-controlled music and playlist management.
+-   Future support for other simulators.
+-   Modular system.
+-   Interaction with the race engineer through the microphone.
+-   Creation of various race engineer profiles based on language, tone,
+    style, etc.
+-   The race engineer must adapt to the driver and provide suggestions; if the
+    driver struggles to apply them, it must find simpler alternatives and
+    report driving errors during the lap.
 
-Aggiungere qui TUTTE le nuove idee, anche se sembrano inutili.
+Add ALL new ideas here, even if they seem useless.
 
-Mai cancellarle.
+Never delete them.
 
-Commentarle e spiegare il motivo.
-
-------------------------------------------------------------------------
-
-# Regola del progetto
-
-Ogni decisione importante deve essere riportata qui.
-
-L'obiettivo è permettere a chiunque (compreso noi stessi tra mesi) di
-capire non solo COSA è stato deciso, ma soprattutto PERCHE' è stato
-deciso.
+Comment them out and explain why.
 
 ------------------------------------------------------------------------
 
-# Hardware e Replicabilità
+# Project Rule
 
-Uno degli obiettivi principali del progetto è permettere ad altri utenti
-di replicare RaceEngineer senza dover ricostruire da zero l'ambiente
-hardware.
+Every important decision must be recorded here.
 
-La documentazione dovrà essere sufficientemente dettagliata da
-consentire ad un utente di acquistare i componenti necessari, prepararli
-e ottenere un sistema funzionante seguendo una guida passo-passo.
+The goal is to allow anyone, including ourselves months from now, to
+understand not only WHAT was decided, but above all WHY it was decided.
 
-## Filosofia
+------------------------------------------------------------------------
 
-L'obiettivo NON è soltanto distribuire il codice.
+# Hardware and Reproducibility
 
-L'obiettivo è distribuire un'intera piattaforma replicabile.
+One of the project's main goals is to enable other users to reproduce
+RaceEngineer without rebuilding the hardware environment from scratch.
 
-Ogni componente hardware dovrà essere documentato.
+The documentation must be detailed enough to allow a user to purchase the
+necessary components, prepare them, and obtain a working system by following a
+step-by-step guide.
 
-Per ogni componente dovranno essere indicati:
+## Philosophy
 
--   Modello
--   Produttore
--   Motivazione della scelta
--   Obbligatorio oppure opzionale
--   Eventuali alternative
--   Problemi riscontrati
--   Note di configurazione
+The goal is NOT merely to distribute the code.
 
-## Hardware previsto
+The goal is to distribute an entire reproducible platform.
 
-Questa sezione verrà aggiornata durante lo sviluppo.
+Every hardware component must be documented.
 
-Configurazione iniziale prevista:
+For each component, the following must be specified:
 
--   Raspberry Pi 3B+ (piattaforma iniziale)
--   Alimentatore
--   microSD (capacità e classe da definire)
--   Collegamento Wi-Fi oppure Ethernet
--   Microfono USB Lavalier
--   DAC USB verso mixer
--   Mixer audio
--   Cuffie
--   Eventuale dissipatore o ventola
--   Chiavetta usb da verificare capacità massima per la raspberry pi con
-    canzoni in FLAC o mp3
+-   Model
+-   Manufacturer
+-   Rationale for selection
+-   Whether it is mandatory or optional
+-   Possible alternatives
+-   Issues encountered
+-   Configuration notes
 
-In futuro potranno essere aggiunti:
+## Planned Hardware
+
+This section will be updated during development.
+
+Planned initial configuration:
+
+-   Raspberry Pi 3B+ (initial platform)
+-   Power supply
+-   microSD card (capacity and class to be determined)
+-   Wi-Fi or Ethernet connection
+-   USB lavalier microphone
+-   USB DAC connected to a mixer
+-   Audio mixer
+-   Headphones
+-   Optional heat sink or fan
+-   USB flash drive containing FLAC or MP3 songs; the maximum capacity
+    supported by the Raspberry Pi must be verified
+
+The following may be added in the future:
 
 -   Raspberry Pi 5
 -   Mini PC
--   Altre piattaforme compatibili
+-   Other compatible platforms
 
-L'architettura del software NON dovrà dipendere dall'hardware scelto.
+The software architecture must NOT depend on the selected hardware.
 
-## Sistema operativo
+## Operating System
 
-Valutare due modalità di distribuzione.
+Evaluate two distribution methods.
 
-Modalità A
+Method A
 
-Distribuire direttamente un'immagine pronta da flashare (es.
-RaceEngineer OS).
+Distribute a ready-to-flash image directly, for example RaceEngineer OS.
 
-L'utente dovrà solamente:
+The user will only need to:
 
-1.  Flashare la microSD.
-2.  Inserirla nella Raspberry.
-3.  Collegare l'hardware.
-4.  Avviare il sistema.
+1.  Flash the microSD card.
+2.  Insert it into the Raspberry Pi.
+3.  Connect the hardware.
+4.  Start the system.
 
-Modalità B
+Method B
 
-Distribuire un installer automatico.
+Distribute an automated installer.
 
-L'utente installerà Raspberry Pi OS e successivamente RaceEngineer
-tramite uno script di installazione che configurerà automaticamente
-dipendenze, servizi e impostazioni.
+The user will install Raspberry Pi OS and then RaceEngineer through an
+installation script that automatically configures dependencies, services, and
+settings.
 
-La soluzione definitiva verrà scelta durante lo sviluppo.
+The final solution will be selected during development.
 
-## Obiettivo finale
+## Final Goal
 
-Chiunque dovrà essere in grado di replicare il progetto seguendo
-esclusivamente la documentazione ufficiale, senza dover chiedere
-informazioni aggiuntive agli sviluppatori.
+Anyone must be able to reproduce the project solely by following the official
+documentation, without requesting additional information from the developers.
 
 ------------------------------------------------------------------------
 
-# Convenzioni del Journal
+# Journal Conventions
 
-Per mantenere il documento semplice e leggibile non verranno utilizzati
-campi come "Attiva", "In pausa" o "Scartata".
+To keep the document simple and readable, fields such as "Active," "Paused,"
+or "Discarded" will not be used.
 
-Le idee NON devono essere eliminate.
+Ideas must NOT be deleted.
 
-Convenzioni:
+Conventions:
 
--   Un'idea valida rimane semplicemente nel documento.
--   `//` viene utilizzato per commenti personali, motivazioni, idee
-    scartate, idee in pausa e promemoria futuri.
--   `#` e `##` sono riservati esclusivamente ai titoli e ai sottotitoli
-    del documento.
+-   A valid idea simply remains in the document.
+-   `//` is used for personal comments, rationale, discarded ideas, paused
+    ideas, and future reminders.
+-   `#` and `##` are reserved exclusively for document headings and
+    subheadings.
 
-L'obiettivo è preservare il ragionamento che ha portato alle decisioni,
-non classificare ogni idea con uno stato.
+The goal is to preserve the reasoning that led to decisions, not to classify
+every idea with a status.
 
 ------------------------------------------------------------------------
 
-# Sessione del 2026-08-06
+# Session of 2026-08-06
 
-Durante questa sessione sono state definite e approvate le seguenti decisioni progettuali.
+During this session, the following project decisions were defined and approved.
 
-## Core locale e deterministico
+## Local and Deterministic Core
 
-Decisione:
+Decision:
 
-Il core funzionerà localmente, senza dipendere dal PC di sviluppo, da servizi
-cloud obbligatori o da un LLM. La rete locale potrà essere usata per ricevere
-la telemetria.
+The core will operate locally, without depending on the development PC,
+mandatory cloud services, or an LLM. The local network may be used to receive
+telemetry.
 
-Motivazione:
+Rationale:
 
-Durante una sessione di guida, continuità di funzionamento e prevedibilità
-sono più importanti della complessità tecnologica. Un eventuale LLM potrà
-arricchire l'esperienza, ma non dovrà diventare un punto di errore per le
-decisioni critiche.
+During a driving session, continuity of operation and predictability are more
+important than technological complexity. An LLM may enrich the experience, but
+it must not become a point of failure for critical decisions.
 
-## Python come tecnologia iniziale
+## Python as the Initial Technology
 
-Decisione:
+Decision:
 
-Lo sviluppo inizierà in Python, mantenendo la possibilità di sostituire in
-futuro singoli moduli con C++ o Rust.
+Development will begin in Python while retaining the option to replace
+individual modules with C++ or Rust in the future.
 
-Motivazione:
+Rationale:
 
-Python permette di sviluppare rapidamente, funziona su Raspberry Pi e offre
-un ecosistema adatto alle future integrazioni audio e AI. Non deve però
-diventare un vincolo se misure reali evidenzieranno limiti prestazionali.
+Python enables rapid development, runs on Raspberry Pi, and provides an
+ecosystem suitable for future audio and AI integrations. However, it must not
+become a constraint if real-world measurements reveal performance limitations.
 
-## Performance first
+## Performance First
 
-Decisione:
+Decision:
 
-Stabilità, affidabilità e reattività avranno priorità sulle funzionalità
-aggiuntive.
+Stability, reliability, and responsiveness will take priority over additional
+features.
 
-Motivazione:
+Rationale:
 
-Il Raspberry Pi 3B+ dispone di risorse limitate e RaceEngineer deve essere
-utile durante la guida. Una funzione non essenziale non giustifica la perdita
-di reattività o affidabilità del sistema.
+The Raspberry Pi 3B+ has limited resources, and RaceEngineer must be useful
+while driving. A nonessential feature does not justify a loss of system
+responsiveness or reliability.
 
-## Core indipendente dal simulatore
+## Simulator-Independent Core
 
-Decisione:
+Decision:
 
-Il core verrà sviluppato e validato con telemetria sintetica e registrata
-prima di integrare un simulatore reale. Gran Turismo 7 rimane un candidato da
-verificare tecnicamente.
+The core will be developed and validated with synthetic and recorded telemetry
+before integrating a real simulator. Gran Turismo 7 remains a candidate subject
+to technical evaluation.
 
-Motivazione:
+Rationale:
 
-Separare il core dalla sorgente reale permette di procedere anche senza un
-simulatore collegato, creare test ripetibili e verificare prima la
-compatibilità con il Raspberry Pi 3B+.
+Separating the core from the real source makes it possible to proceed without a
+connected simulator, create repeatable tests, and first verify compatibility
+with the Raspberry Pi 3B+.
 
-## Introduzione di PROJECT_CONTEXT.md
+## Introduction of PROJECT_CONTEXT.md
 
-Decisione:
+Decision:
 
-PROJECT_CONTEXT.md rappresenterà soltanto lo stato operativo corrente e verrà
-riscritto alla fine di ogni sessione eliminando le informazioni superate.
+PROJECT_CONTEXT.md will represent only the current operational state and will
+be rewritten at the end of each session, removing outdated information.
 
-Motivazione:
+Rationale:
 
-Il Journal conserva la memoria e le ragioni del progetto, ma non è adatto a
-comunicare rapidamente dove si trova il lavoro in questo momento. Un
-documento operativo breve evita di trasformare il Journal in un changelog o
-in una copia degli altri documenti.
+The Journal preserves the project's history and rationale, but it is not
+suitable for quickly communicating the current state of work. A concise
+operational document prevents the Journal from becoming a changelog or a copy
+of the other documents.
 
-## Cambiamento del workflow
+## Workflow Change
 
-Decisione:
+Decision:
 
-Ogni sessione inizierà dallo stato corrente, proseguirà con la memoria
-storica e con la documentazione di progetto, e terminerà aggiornando
-PROJECT_CONTEXT.md.
+Each session will begin with the current state, continue with the historical
+record and project documentation, and end by updating PROJECT_CONTEXT.md.
 
-PROJECT_JOURNAL.md verrà aggiornato soltanto quando emergono decisioni,
-motivazioni, idee importanti o cambi di direzione, e sempre dopo
-l'approvazione dell'utente.
+PROJECT_JOURNAL.md will be updated only when decisions, rationale, important
+ideas, or changes in direction emerge, and always after user approval.
 
-Motivazione:
+Rationale:
 
-Separare stato operativo, memoria progettuale, documentazione tecnica e
-cronologia Git riduce le duplicazioni e rende più immediato comprendere sia
-il presente sia le ragioni delle decisioni passate.
+Separating operational state, project history, technical documentation, and
+Git history reduces duplication and makes both the present state and the
+reasons behind past decisions easier to understand.
+
+------------------------------------------------------------------------
+
+# Repository Language Decision — 2026-08-06
+
+Decision:
+
+The official language of the repository has been changed from Italian to
+English. All repository documentation will be maintained in English.
+
+Rationale:
+
+The project is intended to become an international open-source project;
+therefore, maintaining all repository documentation in English makes it
+accessible and consistent for an international community.

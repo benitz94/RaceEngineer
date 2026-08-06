@@ -1,71 +1,73 @@
 # PROJECT_CONTEXT.md
 
-Ultimo aggiornamento:
+Last updated:
 2026-08-06
 
-## Fase attuale
+## Current Phase
 
-Fase 0 — Documentazione e fondamenta del progetto.
+Phase 0 — Project Documentation and Foundations.
 
-Il progetto è ancora in fase di progettazione. Non è stato scritto codice e
-non esiste ancora un prototipo eseguibile.
+The project is still in the design phase. No code has been written, and no
+executable prototype exists yet.
 
-## Risultato dell'ultima sessione
+## Outcome of the Latest Session
 
-Sono stati definiti e approvati i contenuti di:
+The contents of the following files have been defined, approved, and translated
+into the repository's official language, English:
 
 - `README.md`;
 - `ARCHITECTURE.md`;
 - `ROADMAP.md`;
 - `PROJECT_CONTEXT.md`;
+- `PROJECT_JOURNAL.md`;
 - `AGENTS.md`.
 
-Sono state confermate le seguenti decisioni:
+The following decisions have been confirmed:
 
-- funzionamento locale senza servizi cloud obbligatori;
-- core deterministico, indipendente da LLM e simulatori;
-- Python come tecnologia iniziale, con possibilità futura di sostituire
-  singoli moduli con C++ o Rust;
-- Raspberry Pi 3B+ come hardware iniziale di riferimento;
-- sviluppo iniziale con telemetria sintetica e registrata;
-- stabilità, affidabilità e reattività prima delle funzionalità aggiuntive;
-- Gran Turismo 7 come candidato da verificare, non ancora come requisito.
+- local operation without mandatory cloud services;
+- a deterministic core independent of LLMs and simulators;
+- Python as the initial technology, with the future option of replacing
+  individual modules with C++ or Rust;
+- Raspberry Pi 3B+ as the initial reference hardware;
+- initial development using synthetic and recorded telemetry;
+- stability, reliability, and responsiveness before additional features;
+- Gran Turismo 7 as a candidate to be evaluated, not yet a requirement;
+- English as the official repository language for all committed files.
 
-Non è stato scritto codice.
+No code has been written.
 
-## Sessione successiva
+## Next Session
 
-Completare le decisioni ancora necessarie per chiudere la Fase 0.
+Complete the remaining decisions required to close Phase 0.
 
-## Decisioni ancora aperte
+## Open Decisions
 
-- Licenza open source.
-- Ambiente di esecuzione Python.
-- Sistema operativo iniziale.
-- Struttura iniziale del progetto.
-- Librerie iniziali.
-- Schema interno della telemetria.
-- Formato delle registrazioni.
-- Prima regola deterministica del prototipo.
-- Motore TTS locale.
-- Criteri quantitativi di prestazione.
-- Simulatore iniziale, dopo la verifica tecnica.
-- Modalità finale di distribuzione: immagine pronta oppure installer.
+- Open-source license.
+- Python runtime environment.
+- Initial operating system.
+- Initial project structure.
+- Initial libraries.
+- Internal telemetry schema.
+- Recording format.
+- First deterministic prototype rule.
+- Local TTS engine.
+- Quantitative performance criteria.
+- Initial simulator, following technical evaluation.
+- Final distribution method: ready-to-use image or installer.
 
-## Problemi o blocchi
+## Issues or Blockers
 
-- Gran Turismo 7 non è ancora stato verificato tecnicamente.
-- Le prestazioni effettive del core sul Raspberry Pi 3B+ non sono ancora
-  misurate.
-- L'implementazione non deve iniziare prima del completamento della
-  documentazione prevista per la Fase 0.
-- Non risultano attualmente altri blocchi tecnici noti.
+- Gran Turismo 7 has not yet been technically evaluated.
+- Actual core performance on the Raspberry Pi 3B+ has not yet been measured.
+- Implementation must not begin before the documentation planned for Phase 0
+  is complete.
+- There are currently no other known technical blockers.
 
-## Documenti essenziali da leggere
+## Essential Documents to Read
 
-1. `PROJECT_CONTEXT.md` — stato operativo corrente.
-2. `PROJECT_JOURNAL.md` — intento, decisioni e motivazioni storiche.
-3. `README.md` — visione, obiettivi e principi del progetto.
-4. `ARCHITECTURE.md` — componenti, confini e flussi del sistema.
-5. `ROADMAP.md` — fasi e criteri di completamento.
-6. `AGENTS.md` — regole operative del repository.
+1. `PROJECT_CONTEXT.md` — current operational state.
+2. `PROJECT_JOURNAL.md` — intent, decisions, and historical rationale.
+3. `README.md` — project vision, goals, and principles.
+4. `ARCHITECTURE.md` — system components, boundaries, and flows.
+5. `ROADMAP.md` — phases and completion criteria.
+6. `AGENTS.md` — repository operating rules.

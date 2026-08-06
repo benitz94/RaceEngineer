@@ -1,371 +1,363 @@
-# Architettura di RaceEngineer
+# RaceEngineer Architecture
 
-## Stato del documento
+## Document Status
 
-Questa architettura descrive la direzione iniziale del progetto.
+This architecture describes the project's initial direction.
 
-I formati dei file, il protocollo di telemetria reale e le librerie concrete
-non sono ancora stati scelti.
+File formats, the real telemetry protocol, and specific libraries have not yet
+been selected.
 
-Gran Turismo 7 è un candidato da sottoporre a verifica tecnica e non è ancora
-una dipendenza dell'architettura.
+Gran Turismo 7 is a candidate for technical evaluation and is not yet an
+architectural dependency.
 
-## Tecnologia iniziale
+## Initial Technology
 
-Il linguaggio iniziale del progetto è Python.
+The project's initial language is Python.
 
-Python è stato scelto per:
+Python was selected for:
 
-- rapidità di sviluppo;
-- compatibilità con Raspberry Pi;
-- integrazione con AI, Ollama, STT e TTS;
-- disponibilità di un ampio ecosistema di librerie.
+- rapid development;
+- Raspberry Pi compatibility;
+- integration with AI, Ollama, STT, and TTS;
+- availability of a broad library ecosystem.
 
-Questa scelta non costituisce un vincolo permanente.
+This choice is not a permanent constraint.
 
-I confini tra i moduli dovranno permettere di sostituire in futuro singole
-implementazioni Python con moduli C++ o Rust, qualora le misure dimostrino
-che ciò è necessario per rispettare i requisiti di prestazioni, stabilità o
-reattività.
+Module boundaries must allow individual Python implementations to be replaced
+in the future with C++ or Rust modules if measurements demonstrate that this is
+necessary to meet performance, stability, or responsiveness requirements.
 
-La sostituzione di un modulo non dovrà modificare il comportamento osservabile
-del core né introdurre dipendenze da uno specifico simulatore.
+Replacing a module must not change the observable behavior of the core or
+introduce dependencies on a specific simulator.
 
-## Obiettivi architetturali
+## Architectural Goals
 
-L'architettura deve garantire:
+The architecture must ensure:
 
-- funzionamento locale senza servizi cloud obbligatori;
-- indipendenza dal PC di sviluppo;
-- esecuzione iniziale su Raspberry Pi 3B+;
-- sviluppo e validazione del core senza un simulatore collegato;
-- separazione tra simulatori e logica centrale;
-- comportamento deterministico per le decisioni critiche;
-- possibilità di testare tutto con telemetria sintetica o registrata;
-- sostituibilità dei sistemi di input, output e persistenza;
-- possibilità di sostituire singoli moduli Python con implementazioni C++ o
-  Rust;
-- degradazione controllata dei componenti opzionali;
-- raccolta di dati diagnostici e misure prestazionali.
+- local operation without mandatory cloud services;
+- independence from the development PC;
+- initial execution on a Raspberry Pi 3B+;
+- core development and validation without a connected simulator;
+- separation between simulators and core logic;
+- deterministic behavior for critical decisions;
+- full testability using synthetic or recorded telemetry;
+- replaceable input, output, and persistence systems;
+- the ability to replace individual Python modules with C++ or Rust
+  implementations;
+- controlled degradation of optional components;
+- collection of diagnostic data and performance measurements.
 
-## Principi architetturali
+## Architectural Principles
 
-### Performance first
+### Performance First
 
-Ogni componente e ogni nuova funzionalità devono essere valutati anche
-rispetto alle risorse disponibili sull'hardware di riferimento.
+Every component and new feature must also be evaluated against the resources
+available on the reference hardware.
 
-Le priorità del sistema sono, nell'ordine:
+The system priorities, in order, are:
 
-1. stabilità;
-2. affidabilità;
-3. funzionalità aggiuntive.
+1. stability;
+2. reliability;
+3. additional features.
 
-La reattività del percorso principale non deve essere sacrificata per
-aggiungere caratteristiche non essenziali.
+Responsiveness in the main path must not be sacrificed to add nonessential
+features.
 
-Ottimizzazioni e sostituzioni tecnologiche devono essere guidate da misure
-reali. Se un modulo Python non raggiunge le prestazioni necessarie, la sua
-implementazione potrà essere sostituita con C++ o Rust mantenendone invariati
-confini e responsabilità.
+Optimizations and technology replacements must be guided by real-world
+measurements. If a Python module does not meet the required performance, its
+implementation may be replaced with C++ or Rust while preserving its boundaries
+and responsibilities.
 
-### Core indipendente dal simulatore
+### Simulator-Independent Core
 
-Il core non deve conoscere protocolli, pacchetti o comportamenti specifici
-di un simulatore.
+The core must not know about protocols, packets, or behaviors specific to a
+simulator.
 
-Telemetria sintetica, telemetria registrata e telemetria reale devono
-raggiungere il core attraverso la stessa rappresentazione interna.
+Synthetic, recorded, and real telemetry must reach the core through the same
+internal representation.
 
-Questo permette di sviluppare, testare e validare completamente il core
-prima di collegare una sorgente reale.
+This makes it possible to fully develop, test, and validate the core before
+connecting a real source.
 
-### Decisioni critiche deterministiche
+### Deterministic Critical Decisions
 
-Le decisioni critiche durante una sessione devono essere prodotte da regole
-esplicite, verificabili e ripetibili.
+Critical decisions during a session must be produced by explicit, verifiable,
+and repeatable rules.
 
-Un eventuale LLM non appartiene al percorso critico.
+Any LLM is outside the critical path.
 
-## Fuori ambito per il primo prototipo
+## Out of Scope for the First Prototype
 
-Non fanno parte del primo prototipo:
+The first prototype does not include:
 
-- riconoscimento vocale;
-- conversazione tramite LLM;
-- dipendenze cloud;
-- strategie avanzate di gara;
-- profilazione adattiva del pilota;
-- dashboard completa;
-- gestione musicale;
-- supporto contemporaneo a più simulatori.
+- speech recognition;
+- LLM-based conversation;
+- cloud dependencies;
+- advanced race strategies;
+- adaptive driver profiling;
+- a complete dashboard;
+- music management;
+- simultaneous support for multiple simulators.
 
-## Struttura logica
+## Logical Structure
 
-Il sistema è suddiviso nei seguenti livelli:
+The system is divided into the following layers:
 
-1. sorgenti di telemetria;
-2. normalizzazione;
-3. stato della sessione;
-4. motore deterministico;
-5. messaggi e priorità;
-6. sistemi di output;
-7. persistenza e diagnostica;
-8. moduli opzionali.
+1. telemetry sources;
+2. normalization;
+3. session state;
+4. deterministic engine;
+5. messages and priorities;
+6. output systems;
+7. persistence and diagnostics;
+8. optional modules.
 
-Il flusso principale è:
+The main flow is:
 
-Sorgente telemetria
-→ adattatore
-→ modello interno normalizzato
-→ stato della sessione
-→ motore di regole
-→ evento o avviso
-→ output locale e log
+Telemetry source
+→ adapter
+→ normalized internal model
+→ session state
+→ rules engine
+→ event or alert
+→ local output and log
 
-## Sorgenti di telemetria
+## Telemetry Sources
 
-Una sorgente produce campioni di telemetria senza conoscere le regole di
-gara.
+A source produces telemetry samples without knowing the race rules.
 
-Le prime sorgenti previste sono:
+The initially planned sources are:
 
-### Telemetria sintetica
+### Synthetic Telemetry
 
-Genera scenari controllati per testare casi normali ed eccezioni.
+Generates controlled scenarios for testing normal cases and exceptions.
 
-Deve permettere di riprodurre più volte lo stesso scenario.
+It must allow the same scenario to be replayed multiple times.
 
-### Telemetria registrata
+### Recorded Telemetry
 
-Legge una registrazione locale e la riproduce mantenendo o simulando la
-sequenza temporale originale.
+Reads a local recording and replays it while preserving or simulating the
+original time sequence.
 
-Deve supportare almeno:
+It must support at least:
 
-- avvio;
-- pausa;
-- arresto;
-- velocità di riproduzione controllabile;
-- ripetibilità dello stesso test.
+- start;
+- pause;
+- stop;
+- controllable replay speed;
+- repeatability of the same test.
 
-### Telemetria reale
+### Real Telemetry
 
-Riceve dati via rete locale dal simulatore o dalla console.
+Receives data over the local network from the simulator or console.
 
-Il primo possibile adattatore reale sarà valutato per Gran Turismo 7, ma
-verrà implementato soltanto dopo:
+The first possible real adapter will be evaluated for Gran Turismo 7, but will
+be implemented only after:
 
-1. lo sviluppo del core;
-2. la validazione con telemetria sintetica;
-3. la validazione con telemetria registrata;
-4. la verifica dell'output vocale locale;
-5. la validazione completa del core sul Raspberry Pi 3B+;
-6. una verifica tecnica specifica del simulatore.
+1. core development;
+2. validation with synthetic telemetry;
+3. validation with recorded telemetry;
+4. verification of local voice output;
+5. complete core validation on the Raspberry Pi 3B+;
+6. a simulator-specific technical evaluation.
 
-Ogni simulatore dovrà avere un adattatore separato.
+Each simulator must have a separate adapter.
 
-## Modello interno normalizzato
+## Normalized Internal Model
 
-Gli adattatori convertono i dati esterni in un formato interno indipendente
-dal simulatore.
+Adapters convert external data into a simulator-independent internal format.
 
-Il modello dovrà distinguere almeno:
+The model must distinguish at least:
 
-- timestamp della sorgente, quando disponibile;
-- timestamp di ricezione;
-- identità o tipo della sorgente;
-- stato della sessione;
-- numero del giro;
-- tempo sul giro, quando disponibile;
-- carburante, quando disponibile;
-- validità e qualità del campione;
-- campi assenti o non supportati.
+- source timestamp, when available;
+- receipt timestamp;
+- source identity or type;
+- session state;
+- lap number;
+- lap time, when available;
+- fuel, when available;
+- sample validity and quality;
+- missing or unsupported fields.
 
-L'elenco definitivo dei campi verrà definito durante il prototipo.
+The definitive field list will be established during prototyping.
 
-Il core non deve interpretare direttamente pacchetti o formati specifici di
-un simulatore.
+The core must not directly interpret simulator-specific packets or formats.
 
-## Stato della sessione
+## Session State
 
-Questo componente costruisce una vista coerente della sessione a partire dai
-campioni ricevuti.
+This component builds a coherent view of the session from the received
+samples.
 
-Le sue responsabilità includono:
+Its responsibilities include:
 
-- identificare inizio e fine della sessione;
-- mantenere l'ultimo stato valido;
-- riconoscere transizioni di giro;
-- gestire dati mancanti, duplicati o fuori ordine;
-- esporre al motore di regole uno stato consistente.
+- identifying the start and end of a session;
+- maintaining the latest valid state;
+- detecting lap transitions;
+- handling missing, duplicate, or out-of-order data;
+- exposing a consistent state to the rules engine.
 
-## Motore deterministico
+## Deterministic Engine
 
-Il motore valuta regole esplicite sullo stato della sessione.
+The engine evaluates explicit rules against the session state.
 
-Ogni regola deve avere:
+Each rule must have:
 
-- input dichiarati;
-- condizioni verificabili;
-- risultato prevedibile;
-- priorità;
-- meccanismo per evitare avvisi ripetuti inutilmente;
-- test costruibili con telemetria sintetica o registrata.
+- declared inputs;
+- verifiable conditions;
+- a predictable result;
+- a priority;
+- a mechanism for avoiding unnecessary repeated alerts;
+- tests that can be built with synthetic or recorded telemetry.
 
-Il motore non dipende da un LLM.
+The engine does not depend on an LLM.
 
-Le decisioni critiche devono rimanere disponibili anche quando audio,
-rete Internet o moduli opzionali non funzionano.
+Critical decisions must remain available even when audio, the Internet
+connection, or optional modules are not working.
 
-## Eventi, avvisi e priorità
+## Events, Alerts, and Priorities
 
-Il risultato del motore non viene inviato direttamente al TTS.
+The engine's result is not sent directly to TTS.
 
-Viene prima rappresentato come evento o avviso strutturato contenente almeno:
+It is first represented as a structured event or alert containing at least:
 
-- tipo;
+- type;
 - timestamp;
-- priorità;
-- dati che hanno causato l'avviso;
-- messaggio predefinito o identificatore del messaggio;
-- stato di consegna.
+- priority;
+- data that triggered the alert;
+- predefined message or message identifier;
+- delivery status.
 
-Questa separazione permette di usare lo stesso avviso per log, testo, audio
-o future interfacce.
+This separation allows the same alert to be used for logs, text, audio, or
+future interfaces.
 
 ## Output
 
-Gli output sono adattatori indipendenti.
+Outputs are independent adapters.
 
-### Output testuale
+### Text Output
 
-È obbligatorio nel primo prototipo per debug e test automatici.
+This is mandatory in the first prototype for debugging and automated tests.
 
-### Log locale
+### Local Log
 
-Registra eventi, avvisi, errori e metriche diagnostiche.
+Records events, alerts, errors, and diagnostic metrics.
 
-### TTS locale
+### Local TTS
 
-Converte messaggi approvati in audio senza richiedere servizi cloud.
+Converts approved messages into audio without requiring cloud services.
 
-Il motore di TTS non è ancora stato scelto.
+The TTS engine has not yet been selected.
 
-Un guasto del TTS non deve arrestare la ricezione o l'analisi della
-telemetria.
+A TTS failure must not stop telemetry reception or analysis.
 
-## Persistenza
+## Persistence
 
-Nel primo prototipo la persistenza può essere basata su file locali.
+In the first prototype, persistence may be based on local files.
 
-Dovrà conservare almeno:
+It must retain at least:
 
-- log applicativi;
-- eventi riconosciuti;
-- avvisi prodotti;
-- errori;
-- metriche essenziali;
-- informazioni necessarie a riprodurre un test.
+- application logs;
+- detected events;
+- generated alerts;
+- errors;
+- essential metrics;
+- information required to reproduce a test.
 
-La necessità di un database verrà valutata solo quando emergeranno requisiti
-concreti per sessioni, setup e profili del pilota.
+The need for a database will be evaluated only when concrete requirements for
+sessions, setups, and driver profiles emerge.
 
-## Moduli LLM opzionali
+## Optional LLM Modules
 
-Un LLM non fa parte del core e non si trova nel percorso critico.
+An LLM is not part of the core and is not in the critical path.
 
-Potrà ricevere copie di eventi o riepiloghi già prodotti dal sistema
-deterministico, ma non sostituirà le regole responsabili degli avvisi
-critici.
+It may receive copies of events or summaries already produced by the
+deterministic system, but it will not replace the rules responsible for
+critical alerts.
 
-L'interfaccia LLM dovrà:
+The LLM interface must:
 
-- essere disattivabile;
-- non bloccare il core;
-- tollerare indisponibilità ed errori;
-- distinguere chiaramente contenuto deterministico e contenuto generato;
-- non rendere obbligatoria una connessione cloud.
+- be disableable;
+- not block the core;
+- tolerate unavailability and errors;
+- clearly distinguish deterministic content from generated content;
+- not make a cloud connection mandatory.
 
-## Gestione degli errori
+## Error Handling
 
-Il sistema deve degradare in modo controllato.
+The system must degrade gracefully.
 
-Esempi:
+Examples:
 
-- perdita della telemetria: segnalazione e attesa della sorgente;
-- pacchetto non valido: scarto controllato e log;
-- campo assente: valore non disponibile, senza inventare dati;
-- errore TTS: conservazione dell'avviso nel log e nell'output testuale;
-- modulo opzionale non disponibile: continuazione del core;
-- risorse hardware insufficienti: metrica e segnalazione diagnostica.
+- telemetry loss: report the condition and wait for the source;
+- invalid packet: discard it safely and log the event;
+- missing field: mark the value as unavailable without inventing data;
+- TTS error: retain the alert in the log and text output;
+- unavailable optional module: continue core operation;
+- insufficient hardware resources: record a metric and diagnostic report.
 
-## Prestazioni
+## Performance
 
-Il Raspberry Pi 3B+ è il banco di prova iniziale.
+The Raspberry Pi 3B+ is the initial test bench.
 
-La validazione completa del core sul Raspberry Pi 3B+ deve avvenire prima
-della scelta e dell'implementazione dell'adattatore per il primo simulatore
-reale.
+Complete core validation on the Raspberry Pi 3B+ must occur before selecting
+and implementing the adapter for the first real simulator.
 
-La validazione userà telemetria sintetica e registrata e dovrà misurare:
+Validation will use synthetic and recorded telemetry and must measure:
 
-- uso della CPU;
-- uso della memoria;
-- latenza tra campione ed evento;
-- latenza tra evento e avviso;
-- perdita di campioni;
-- stabilità durante esecuzioni prolungate;
-- utilizzo dello spazio locale.
+- CPU usage;
+- memory usage;
+- sample-to-event latency;
+- event-to-alert latency;
+- sample loss;
+- stability during extended runs;
+- local storage usage.
 
-Le soglie di accettazione verranno definite dopo le prime misure, senza
-assumerle in anticipo.
+Acceptance thresholds will be defined after the first measurements, without
+assuming them in advance.
 
-Se le prestazioni di un singolo modulo Python risultassero insufficienti,
-sarà possibile valutarne la sostituzione con un'implementazione C++ o Rust
-senza modificare l'architettura generale.
+If the performance of an individual Python module proves insufficient,
+replacing it with a C++ or Rust implementation may be evaluated without
+changing the overall architecture.
 
-## Verifica tecnica di Gran Turismo 7
+## Gran Turismo 7 Technical Evaluation
 
-Prima di dichiarare il supporto a Gran Turismo 7 sarà necessario verificare:
+Before declaring support for Gran Turismo 7, the following must be evaluated:
 
-- come viene trasmessa la telemetria;
-- quali piattaforme e configurazioni sono supportate;
-- quali campi sono disponibili;
-- frequenza e latenza dei dati;
-- comportamento in caso di perdita o riordinamento dei pacchetti;
-- identificazione di sessione, giro e vettura;
-- eventuali trasformazioni o decodifiche necessarie;
-- stabilità tra aggiornamenti del gioco;
-- compatibilità con Raspberry Pi 3B+;
-- aspetti di licenza, distribuzione e documentazione.
+- how telemetry is transmitted;
+- which platforms and configurations are supported;
+- which fields are available;
+- data frequency and latency;
+- behavior when packets are lost or reordered;
+- session, lap, and car identification;
+- any required transformations or decoding;
+- stability across game updates;
+- Raspberry Pi 3B+ compatibility;
+- licensing, distribution, and documentation considerations.
 
-Questa verifica avverrà dopo la validazione completa del core sul Raspberry
-Pi 3B+.
+This evaluation will take place after complete core validation on the
+Raspberry Pi 3B+.
 
-Il risultato dovrà essere documentato prima di trasformare GT7 in un
-requisito definitivo.
+The outcome must be documented before GT7 becomes a definitive requirement.
 
-## Sicurezza e privacy
+## Security and Privacy
 
-Il funzionamento base deve restare confinabile alla rete locale.
+Basic operation must be capable of remaining confined to the local network.
 
-I dati delle sessioni devono essere conservati localmente per impostazione
-predefinita.
+Session data must be stored locally by default.
 
-Qualsiasi futura trasmissione a servizi esterni dovrà essere opzionale,
-esplicita e documentata.
+Any future transmission to external services must be optional, explicit, and
+documented.
 
-## Indipendenza dalla Companion AI
+## Independence from AI Desktop Companion
 
-RaceEngineer e Companion AI sono progetti distinti.
+RaceEngineer and AI Desktop Companion are separate projects.
 
-Il core di RaceEngineer non deve importare direttamente il progetto privato
-né dipendere dal suo ambiente di esecuzione.
+The RaceEngineer core must not directly import the private project or depend
+on its runtime environment.
 
-Eventuali componenti condivisi dovranno avere:
+Any shared components must have:
 
-- confini chiari;
-- licenza compatibile;
-- dipendenze documentate;
-- possibilità di essere usati e testati autonomamente.
+- clear boundaries;
+- a compatible license;
+- documented dependencies;
+- the ability to be used and tested independently.
