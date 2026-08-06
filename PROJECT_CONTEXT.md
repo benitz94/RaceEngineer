@@ -8,7 +8,7 @@ RaceEngineer is in its documented foundation stage. The initial project document
 
 Git has been initialized, the initial commits have been created, and the public GitHub repository is available at `benitz94/RaceEngineer`.
 
-English is the official repository language. References to the separate private project use its official name, **AI Desktop Companion**.
+English is the official repository language.
 
 ## Available Hardware
 
@@ -16,7 +16,7 @@ A Raspberry Pi 3B+ has been found and is available as the initial target platfor
 
 ## Next Objective
 
-Begin the first implementation task defined by `ROADMAP.md`, while preserving the documented separation between RaceEngineer and AI Desktop Companion.
+Begin the first implementation task defined by `ROADMAP.md`.
 
 ## Essential Files
 
