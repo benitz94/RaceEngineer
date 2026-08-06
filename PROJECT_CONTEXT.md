@@ -1,73 +1,27 @@
-# PROJECT_CONTEXT.md
+# Project Context
 
-Last updated:
-2026-08-06
+Last updated: 2026-08-07
 
-## Current Phase
+## Current State
 
-Phase 0 — Project Documentation and Foundations.
+RaceEngineer is in its documented foundation stage. The initial project documentation and architecture are complete, but no application code has been written.
 
-The project is still in the design phase. No code has been written, and no
-executable prototype exists yet.
+Git has been initialized, the initial commits have been created, and the public GitHub repository is available at `benitz94/RaceEngineer`.
 
-## Outcome of the Latest Session
+English is the official repository language. References to the separate private project use its official name, **AI Desktop Companion**.
 
-The contents of the following files have been defined, approved, and translated
-into the repository's official language, English:
+## Available Hardware
 
-- `README.md`;
-- `ARCHITECTURE.md`;
-- `ROADMAP.md`;
-- `PROJECT_CONTEXT.md`;
-- `PROJECT_JOURNAL.md`;
-- `AGENTS.md`.
+A Raspberry Pi 3B+ has been found and is available as the initial target platform and practical test bench.
 
-The following decisions have been confirmed:
+## Next Objective
 
-- local operation without mandatory cloud services;
-- a deterministic core independent of LLMs and simulators;
-- Python as the initial technology, with the future option of replacing
-  individual modules with C++ or Rust;
-- Raspberry Pi 3B+ as the initial reference hardware;
-- initial development using synthetic and recorded telemetry;
-- stability, reliability, and responsiveness before additional features;
-- Gran Turismo 7 as a candidate to be evaluated, not yet a requirement;
-- English as the official repository language for all committed files.
+Begin the first implementation task defined by `ROADMAP.md`, while preserving the documented separation between RaceEngineer and AI Desktop Companion.
 
-No code has been written.
+## Essential Files
 
-## Next Session
-
-Complete the remaining decisions required to close Phase 0.
-
-## Open Decisions
-
-- Open-source license.
-- Python runtime environment.
-- Initial operating system.
-- Initial project structure.
-- Initial libraries.
-- Internal telemetry schema.
-- Recording format.
-- First deterministic prototype rule.
-- Local TTS engine.
-- Quantitative performance criteria.
-- Initial simulator, following technical evaluation.
-- Final distribution method: ready-to-use image or installer.
-
-## Issues or Blockers
-
-- Gran Turismo 7 has not yet been technically evaluated.
-- Actual core performance on the Raspberry Pi 3B+ has not yet been measured.
-- Implementation must not begin before the documentation planned for Phase 0
-  is complete.
-- There are currently no other known technical blockers.
-
-## Essential Documents to Read
-
-1. `PROJECT_CONTEXT.md` — current operational state.
-2. `PROJECT_JOURNAL.md` — intent, decisions, and historical rationale.
-3. `README.md` — project vision, goals, and principles.
-4. `ARCHITECTURE.md` — system components, boundaries, and flows.
-5. `ROADMAP.md` — phases and completion criteria.
-6. `AGENTS.md` — repository operating rules.
+1. `README.md` — project overview and scope.
+2. `ARCHITECTURE.md` — architectural boundaries and component design.
+3. `ROADMAP.md` — implementation sequence and milestones.
+4. `PROJECT_JOURNAL.md` — permanent decisions and project history.
+5. `AGENTS.md` — repository working rules.
