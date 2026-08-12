@@ -321,25 +321,25 @@ The software architecture must NOT depend on the selected hardware.
 
 ## Operating System
 
-Evaluate two distribution methods.
+// Evaluate two distribution methods.
 
-Method A
+// Method A
 
-Distribute a ready-to-flash image directly, for example RaceEngineer OS.
+// Distribute a ready-to-flash image directly, for example RaceEngineer OS.
 
-The user will only need to:
+// The user will only need to:
 
-1.  Flash the microSD card.
-2.  Insert it into the Raspberry Pi.
-3.  Connect the hardware.
-4.  Start the system.
+// 1.  Flash the microSD card.
+// 2.  Insert it into the Raspberry Pi.
+// 3.  Connect the hardware.
+// 4.  Start the system.
 
-Method B
+// Method B
 
 Distribute an automated installer.
 
-The user will install Raspberry Pi OS and then RaceEngineer through an
-installation script that automatically configures dependencies, services, and
+The user will install the RaceEngineer project through an
+installation script that automatically detects the OS, configures dependencies, services, and
 settings.
 
 The final solution will be selected during development.
@@ -371,9 +371,127 @@ every idea with a status.
 
 ------------------------------------------------------------------------
 
-# Session of 2026-08-06
+# Engineer Profiles
 
-During this session, the following project decisions were defined and approved.
+Decision:
+
+RaceEngineer separates race-engineering logic from presentation.
+
+The telemetry analysis, strategy engine, and deterministic decision-making
+must remain completely independent from the way information is presented to
+the driver.
+
+Engineer Profiles are independent from any simulator or game.
+
+Users choose the Engineer Profile they prefer from the profiles available,
+regardless of the simulator currently in use.
+
+An Engineer Profile may define:
+
+- Voice Profile
+- Communication style
+- Verbosity
+- Coaching level
+- Intervention frequency
+- Emotional tone
+
+Engineer Profiles must never contain simulator-specific telemetry logic.
+
+Rationale:
+
+Changing the engineer should only change how technical information is
+presented, never the underlying technical decisions.
+
+------------------------------------------------------------------------
+
+# Telemetry Adapter
+
+Decision:
+
+Telemetry acquisition is an independent architectural layer.
+
+A Telemetry Adapter is responsible only for:
+
+- acquiring telemetry from any supported source;
+- translating telemetry into the internal RaceEngineer data model;
+- exposing a common interface to the Race Engineer Core.
+
+It must never define personality, communication style, or voice.
+
+Rationale:
+
+Keeping telemetry isolated allows the same Engineer Profile to operate
+across every supported simulator without duplicating race-engineering
+logic.
+
+------------------------------------------------------------------------
+
+# Voice Profiles
+
+Decision:
+
+Voice identity is independent from telemetry and Engineer Profiles.
+
+A Voice Profile defines only how the engineer sounds.
+
+The default configuration should associate one Voice Profile with each
+Engineer Profile.
+
+Multiple Engineer Profiles may share the same Voice Profile, and a single
+Engineer Profile may optionally support different Voice Profiles.
+
+Rationale:
+
+Voice should be replaceable without affecting race logic or engineer
+behavior.
+
+// Idea still not completely defined, will decide later while working on it.
+
+------------------------------------------------------------------------
+
+# Layered Architecture
+
+Decision:
+
+RaceEngineer is composed of independent architectural layers.
+
+A running configuration combines:
+
+- Telemetry Adapter
+- Race Engineer Core
+- Engineer Profile
+- Voice Profile
+
+Each layer has a single responsibility and can evolve independently.
+
+Rationale:
+
+Separating responsibilities improves maintainability, portability,
+testing, and future expansion.
+
+------------------------------------------------------------------------
+
+# User Freedom
+
+Decision:
+
+RaceEngineer never associates a specific Engineer Profile with a specific
+simulator.
+
+Any compatible Engineer Profile should be usable with any supported
+simulator.
+
+Users may create personal presets combining telemetry adapters,
+Engineer Profiles, and Voice Profiles, but these mappings are optional and
+user-defined.
+
+Rationale:
+
+The engineer is part of the user experience, not part of simulator
+support.
+
+------------------------------------------------------------------------
+
 
 ## Local and Deterministic Core
 
