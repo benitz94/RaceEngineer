@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-08-13
+Last updated: 2026-09-03
 
 ## Current State
 
@@ -9,6 +9,9 @@ RaceEngineer is in its documented foundation stage. The initial project document
 Git has been initialized, the initial commits have been created, and the public GitHub repository is available at `benitz94/RaceEngineer`.
 
 English is the official repository language.
+
+Public outbound license: GPL-3.0-only.
+External contributions require the project CLA.
 
 ## Available Hardware and Roles
 

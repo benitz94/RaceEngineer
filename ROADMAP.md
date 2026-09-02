@@ -34,7 +34,7 @@ Activities:
 
 - complete the README, ARCHITECTURE, and ROADMAP;
 - record approved decisions in the PROJECT_JOURNAL;
-- select and add an open-source license;
+- select and add an open-source license (GPL-3.0-only and CLA; done);
 - define the process for documenting decisions;
 - define the minimum requirements for the first prototype;
 - define the initial Python project structure;
@@ -48,7 +48,8 @@ Completion criteria:
 - open assumptions are identifiable;
 - Python is documented as the initial technology rather than a permanent
   constraint;
-- the license has been selected;
+- the license has been selected (GPL-3.0-only, with CLA for inbound
+  contributions);
 - the initial development environment has been defined;
 - no library is mandatory without documented rationale.
 
@@ -238,7 +239,6 @@ These items represent future possibilities, not already approved requirements.
 
 The following must be decided before or during the initial phases:
 
-- open-source license;
 - Python runtime environment;
 - initial operating system;
 - initial project structure;

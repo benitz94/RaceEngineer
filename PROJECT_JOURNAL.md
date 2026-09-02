@@ -591,3 +591,57 @@ Rationale:
 The project is intended to become an international open-source project;
 therefore, maintaining all repository documentation in English makes it
 accessible and consistent for an international community.
+
+------------------------------------------------------------------------
+
+# Licensing Decision — 2026-09-03
+
+Status when this entry is inserted: adopted.
+
+Decision:
+
+- The public outbound license of RaceEngineer is the GNU General Public
+  License version 3 only (`GPL-3.0-only`).
+- External contributions are accepted only under the Individual or
+  Entity Contributor License Agreement.
+- Contributors retain copyright in their Contributions.
+- The maintainer receives a copyright license and a patent license
+  sufficient to use, modify, distribute, sublicense, and relicense
+  Contributions in the official project.
+- The public project remains available under GPL-3.0-only.
+- In parallel, the maintainer may offer alternative or proprietary
+  licenses for the official project and for Contributions covered by
+  the CLA.
+- Commercial use, paid distribution, and paid support of the public
+  project are allowed under GPL-3.0-only.
+- A separate license is required only to distribute this software or a
+  covered derivative without complying with the applicable GPL-3.0-only
+  obligations.
+- The rights holder of the official project is Benito Cifiello,
+  personally, not a company.
+- No governing-law or forum clause was adopted with the CLA.
+
+Reason:
+
+- The project is intended to remain genuinely open source.
+- A permissive outbound license such as MIT was not adopted for the
+  official project.
+- `GPL-3.0-only` was chosen instead of `GPL-3.0-or-later` for
+  outbound predictability.
+- Copyleft applies to conveyed covered works. It does not prevent
+  independent reimplementations or competing forks that comply with
+  GPL-3.0-only.
+- The CLA separates inbound rights from outbound terms so that a
+  future parallel license does not depend on collecting consent from
+  every past contributor.
+- Copyright assignment was not adopted.
+- AGPL was not adopted. The current product is a local system.
+  Network copyleft remains a separate product decision.
+
+Not adopted:
+
+- MIT / BSD / Apache-2.0 as the project outbound license.
+- AGPL as the initial outbound license.
+- DCO as the only inbound instrument.
+- Automatic CLA tooling.
+- A public file of contributor personal data.

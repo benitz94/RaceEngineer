@@ -201,6 +201,35 @@ RaceEngineer.
 
 ## License
 
-The repository is intended to be open source.
+RaceEngineer is free software licensed under the GNU General Public
+License version 3 only (GPL-3.0-only). See `LICENSE` and `COPYRIGHT`.
 
-The license has not yet been selected.
+You may use, study, modify, and redistribute RaceEngineer, including
+for commercial use, paid distribution, and paid support, if you comply
+with GPL-3.0-only.
+
+A separate license from the maintainer is required only if you want to
+distribute this software or a covered derivative without complying with
+the applicable GPL-3.0-only obligations.
+
+If you convey a modified version or other covered derivative work, you
+must comply with the applicable terms of GPL-3.0-only. This does not
+require you to publish private modifications that you do not convey.
+It does not restrict an independent reimplementation that is not a
+derivative of this code.
+
+The name "RaceEngineer" is not licensed under the GPL. Do not present a
+fork or build as the official RaceEngineer project, as an official
+build, or as a product endorsed by the maintainer.
+
+Contributions are accepted only under the project's Contributor License
+Agreements. See `CLA.md`, `CLA-ENTITY.md`, and `CONTRIBUTING.md`.
+
+The public GPL terms describe what recipients may do with the public
+project. They do not, by themselves, grant the maintainer a right to
+relicense third-party contributions. That inbound grant is the purpose
+of the CLA.
+
+This copyright license does not authorize use of third-party simulator
+brands, telemetry protocols, or assets beyond what those third parties
+allow.
