@@ -19,7 +19,7 @@ class RecoveryTests(unittest.TestCase):
         for _ in range(2):
             output = io.StringIO()
             with contextlib.redirect_stdout(output), patch("raceengineer.demo.paced", side_effect=lambda samples, rate: samples):
-                self.assertEqual(main(["--source", "synthetic"]), 0)
+                self.assertEqual(main(["--source", "synthetic", "--samples-only"]), 0)
             outputs.append(output.getvalue())
         self.assertEqual(outputs[0], outputs[1])
         self.assertEqual(len(outputs[0].splitlines()), 20)

@@ -8,6 +8,15 @@ RaceEngineer has its first simulator-independent data-recovery slice in Python:
 a nullable sample model, repeatable synthetic source, versioned JSONL recording
 and file replay, text CLI output, and an optional UDP metadata probe.
 
+A deterministic rules engine tracks the last valid fuel and lap and suppresses
+repeated low-fuel alerts. Valid fuel at or below the configurable 10.0-litre
+default triggers a structured alert; valid fuel above 12.0 litres or an explicit
+source restart resets suppression. Missing or invalid fuel does not trigger.
+Synthetic and file CLI modes print samples and alerts by default, with
+`--alerts-only` and `--samples-only` output options. Sample JSONL stays version 1;
+sample-only output remains replayable. The default synthetic scenario crosses
+the low-fuel threshold. UDP remains a metadata probe only.
+
 Runtime and offline tests use only the Python standard library. Python 3.10 or
 newer is required. Run instructions and recording semantics are documented in
 `docs/DATA_RECOVERY.md`. Expose `src/raceengineer` through `PYTHONPATH` when
@@ -23,8 +32,8 @@ development PC without a simulator. No simulator protocol adapter is implemented
 
 ## Next Objective
 
-Select the next bounded slice with the project owner. Session state,
-deterministic rules, alerts, and broader replay controls remain pending.
+Select the next bounded slice with the project owner. Broader session lifecycle
+handling, additional rules, alert delivery, and replay controls remain pending.
 
 ## Essential Files
 

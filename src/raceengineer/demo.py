@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 from .recording import encode
+from .rules import FUEL_LOW_THRESHOLD, RulesEngine
 from .sources import paced, replay, synthetic, validate_rate
 from .udp_probe import probe
 
@@ -16,6 +17,10 @@ def main(argv=None):
     parser.add_argument("--count", type=int, help="synthetic samples or UDP datagrams")
     parser.add_argument("--port", type=int, default=33740)
     parser.add_argument("--host", default="0.0.0.0", help="UDP bind address")
+    output = parser.add_mutually_exclusive_group()
+    output.add_argument("--alerts-only", action="store_true", help="suppress sample output")
+    output.add_argument("--samples-only", action="store_true", help="print replayable sample recordings only")
+    parser.add_argument("--fuel-low-threshold", type=float, default=FUEL_LOW_THRESHOLD)
     args = parser.parse_args(argv)
     if args.source == "file" and not args.path:
         parser.error("file source requires a path")
@@ -27,15 +32,22 @@ def main(argv=None):
         parser.error("--count must be nonnegative")
     if not 0 <= args.port <= 65535:
         parser.error("--port must be between 0 and 65535")
+    if args.source == "udp" and (args.alerts_only or args.samples_only):
+        parser.error("sample and alert output flags are not supported for UDP metadata")
     try:
         validate_rate(args.rate)
         if args.source == "udp":
             for info in probe(args.port, args.host, args.count):
                 print(json.dumps(info.to_dict(), sort_keys=True), flush=True)
         else:
+            engine = RulesEngine(args.fuel_low_threshold)
             samples = synthetic(20 if args.count is None else args.count, args.rate) if args.source == "synthetic" else replay(args.path)
             for sample in paced(samples, args.rate):
-                print(encode(sample), flush=True)
+                if not args.alerts_only:
+                    print(encode(sample), flush=True)
+                alert = engine.process(sample)
+                if alert is not None and not args.samples_only:
+                    print(alert.encode(), flush=True)
     except (ValueError, OSError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1

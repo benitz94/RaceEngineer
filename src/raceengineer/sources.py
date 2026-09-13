@@ -22,7 +22,7 @@ def synthetic(count=20, rate=10.0):
             source_ts=timestamp, recv_ts=timestamp, source_id="synthetic",
             lap=1 + index // 10, lap_time=(index % 10) / rate,
             speed=None if index % 7 == 6 else float(20 + index % 10),
-            fuel=round(40 - index * 0.1, 6),
+            fuel=round(max(0.0, 11.5 - index * 0.1), 6),
             valid=index % 11 != 10,
             quality="invalid" if index % 11 == 10 else "synthetic",
         )

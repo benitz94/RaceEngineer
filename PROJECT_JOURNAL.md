@@ -1,5 +1,13 @@
 # PROJECT_JOURNAL.md
 
+## First Deterministic Fuel Rule — 2026-09-13
+
+The sample pipeline now produces a structured low-fuel alert from explicitly
+valid observations. Hysteresis suppresses repeated alerts until valid fuel
+recovers or the source restarts, preserving predictable behavior without
+inventing decisions from missing data. Synthetic and recorded input validate
+the rule offline; sample recordings retain their existing format.
+
 ## First Data-Recovery Slice — 2026-09-13
 
 The first simulator-independent recovery pipeline has landed: nullable telemetry
