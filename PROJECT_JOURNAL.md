@@ -1,5 +1,14 @@
 # PROJECT_JOURNAL.md
 
+## First Data-Recovery Slice — 2026-09-13
+
+The first simulator-independent recovery pipeline has landed: nullable telemetry
+samples, repeatable synthetic input, versioned local recordings and file replay,
+and text output, validated offline. An optional UDP probe reports transport
+metadata only. This bounded slice establishes reproducible acquisition before
+session analysis or simulator integration; it does not target Raspberry Pi or
+introduce simulator protocol decoding.
+
 # RaceEngineer - Design Journal
 
 > Living document. Do not delete ideas: comment them out with `//`,

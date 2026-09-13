@@ -1,44 +1,36 @@
 # Project Context
 
-Last updated: 2026-09-03
+Last updated: 2026-09-13
 
 ## Current State
 
-RaceEngineer is in its documented foundation stage. The initial project documentation and architecture are complete, but no application code has been written.
+RaceEngineer has its first simulator-independent data-recovery slice in Python:
+a nullable sample model, repeatable synthetic source, versioned JSONL recording
+and file replay, text CLI output, and an optional UDP metadata probe.
 
-Git has been initialized, the initial commits have been created, and the public GitHub repository is available at `benitz94/RaceEngineer`.
+Runtime and offline tests use only the Python standard library. Python 3.10 or
+newer is required. Run instructions and recording semantics are documented in
+`docs/DATA_RECOVERY.md`. Expose `src/raceengineer` through `PYTHONPATH` when
+running from this tree.
 
-English is the official repository language.
+The public repository is `benitz94/RaceEngineer`. English is the official
+repository language. The public license is GPL-3.0-only; external contributions
+require the existing CLA.
 
-Public outbound license: GPL-3.0-only.
-External contributions require the project CLA.
-
-## Available Hardware and Roles
-
-The main development PC remains the environment for development, testing, and debugging.
-
-A Raspberry Pi 3B+ is available as the initial standalone RaceEngineer target platform and practical test bench.
-
-The old Acer All-in-One Linux machine was recovered on 2026-08-13. Its previous Debian 10.9 installation was removed, and MX Linux 25.2 Xfce with SysVinit was installed successfully on the internal 1 TB Toshiba HDD. The Acer boots correctly from the internal disk.
-
-The Acer provides approximately 3.7 GiB of RAM. MX Linux uses approximately 1.0 GiB at idle, leaving approximately 2.8 GiB available, and an active 2 GiB swap file provides additional memory headroom. Basic desktop operation and browser/YouTube playback were satisfactory.
-
-The Acer is not the RaceEngineer target hardware and is not the main development PC. Its planned role is a Linux support and test workstation for Raspberry Pi work when the project reaches the appropriate stage.
-
-The operational hardware distinction remains:
-
-- development PC: development, testing, and debugging;
-- Acer with MX Linux: Linux support and test workstation for Raspberry Pi work;
-- Raspberry Pi: initial standalone RaceEngineer target and test platform.
+This slice does not target Raspberry Pi. Hardware references in older design
+documents are historical. Development and offline validation occur on the
+development PC without a simulator. No simulator protocol adapter is implemented.
 
 ## Next Objective
 
-Begin the first implementation task defined by `ROADMAP.md`.
+Select the next bounded slice with the project owner. Session state,
+deterministic rules, alerts, and broader replay controls remain pending.
 
 ## Essential Files
 
-1. `README.md` — project overview and scope.
-2. `ARCHITECTURE.md` — architectural boundaries and component design.
-3. `ROADMAP.md` — implementation sequence and milestones.
-4. `PROJECT_JOURNAL.md` — permanent decisions and project history.
+1. `PROJECT_JOURNAL.md` — project intent and decision history.
+2. `README.md` — project overview.
+3. `ARCHITECTURE.md` — architectural boundaries.
+4. `ROADMAP.md` — broader implementation sequence.
 5. `AGENTS.md` — repository working rules.
+6. `docs/DATA_RECOVERY.md` — current demo and recording format.
