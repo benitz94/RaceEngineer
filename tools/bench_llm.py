@@ -195,7 +195,7 @@ def bench_model(name, prompt, samples, alerts):
             words=words, error=error,
         ))
         if index == 0:
-            print(briefing or completion.text, file=sys.stderr)
+            print(briefing or completion.text, file=sys.stderr, flush=True)
     stop_model(name)
     return rows
 
@@ -211,14 +211,14 @@ def main(argv=None):
     preexisting = local_names()
     rows = []
     for requested, fallbacks in MATRIX:
-        print(f"== {requested} ==", file=sys.stderr)
+        print(f"== {requested} ==", file=sys.stderr, flush=True)
         name, pull_ok, error = resolve_and_pull(requested, fallbacks)
         if not pull_ok:
             rows.append(row(model=requested, quant=quant_from_tag(requested),
                             pull_ok=False, error=error))
             continue
         if name != requested:
-            print(f"using official tag {name} instead of {requested}", file=sys.stderr)
+            print(f"using official tag {name} instead of {requested}", file=sys.stderr, flush=True)
         rows.extend(bench_model(name, prompt, samples, alerts))
         if name not in preexisting:
             try:
