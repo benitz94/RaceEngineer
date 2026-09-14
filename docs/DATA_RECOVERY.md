@@ -32,7 +32,11 @@ UDP stays a metadata probe and does not run telemetry rules.
 ```powershell
 python -m raceengineer.demo --source synthetic --alerts-only
 python -m raceengineer.demo --source synthetic --fuel-low-threshold 9.8 --alerts-only
+python -m raceengineer.demo --source synthetic --brief
+python -m raceengineer.demo --source synthetic --brief --lang it --alerts-only
 ```
+
+`--brief` is optional. It does not change the fuel rule. After the session it asks a local LLM for a short spoken briefing from the collected sample and alert dicts. If the LLM is down, the CLI still prints alerts, writes one warning to stderr, and exits 0. `--brief` cannot be combined with `--samples-only` or UDP. Language is `--lang en` or `--lang it`. See `docs/LLM_SIDECAR_NOTES.md`.
 
 The single fuel rule requires `valid: true` and a present fuel observation.
 It fires at fuel <= 10.0 litres and remains suppressed until a valid observation
