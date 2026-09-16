@@ -1,87 +1,98 @@
 # Optional LLM Sidecar Notes
 
-The sidecar turns structured sample and alert dicts into a short spoken
-radio briefing. It is off by default. The deterministic `fuel_low` rule
-does not call it.
+The optional sidecar turns sample and alert dicts into a short radio
+briefing. It is off by default and outside the deterministic alert path.
 
-Host for this bench: Windows development PC, NVIDIA GeForce RTX 3050
-6 GB, 16 GB RAM, Ollama 0.34.0, Python 3.12. Date: 2026-09-14.
+## Current scope
 
-## Setup
+Only `llama3.2:3b` is retained. The owner stopped the larger benchmark on
+2026-09-16. No further downloads, generations, or tests were run after that
+instruction. The benchmark tool now uses this installed model only and
+never downloads or removes models.
 
-Runtime and tests still use the Python standard library. A local
-generator is required only when `--brief` is used.
+The completed measurements below were taken on this machine: WSL2 Linux
+`6.18.33.2-microsoft-standard-WSL2`, NVIDIA GeForce RTX 5070 Ti Laptop GPU
+(12,227 MiB VRAM), 15 GiB RAM visible to WSL, 4 GiB swap, NVIDIA driver
+610.62, Ollama 0.34.1, Python 3.12.3.
 
-### Ollama (default)
+## Usage
 
-1. Install Ollama and leave the service running on `127.0.0.1:11434`.
-2. Pull a small instruct model, for example `ollama pull llama3.2:3b`.
-3. From the repository root:
+Ollama must be running with `llama3.2:3b` already installed. Use `python3`
+on this machine. These commands are for a future explicitly requested run:
 
-```powershell
-$env:PYTHONPATH = "$PWD/src"
-python -m raceengineer.demo --source synthetic --brief
-python -m raceengineer.demo --source synthetic --brief --lang it --alerts-only
+```bash
+export PYTHONPATH=src
+python3 -m raceengineer.demo --source synthetic --brief
+python3 -u tools/bench_llm.py 2> tools/bench_llm.log
 ```
 
-If Ollama is down, the CLI still prints alerts, writes one warning to
-stderr, and exits 0.
+On Windows PowerShell, set `$env:PYTHONPATH = "$PWD\src"` instead.
+The tool writes `tools/bench_stdout.csv` and prints CSV to stdout.
+`tools/bench_llm.log` is ignored and must not be committed.
 
-### llama.cpp
+## Method
 
-Run a local server (default `http://127.0.0.1:8080`) and set:
+All three generations used the same existing synthetic session: 20
+samples from 0.0 to 1.9 seconds and one `fuel_low` alert at 1.5 seconds,
+with 10.0 L and the deterministic message "Fuel low. Box this lap."
+The last valid sample is lap 2 with 9.6 L. No telemetry was invented.
 
-```powershell
-$env:RACEENGINEER_LLM_BACKEND = "llamacpp"
-$env:RACEENGINEER_LLM_URL = "http://127.0.0.1:8080"
-```
+The English prompt and backend settings were unchanged: temperature 0.2,
+120 output tokens maximum, context 2048, no fixed random seed. The model
+was unloaded before generation 1; generations 2 and 3 were warm requests
+with identical input and potential prompt-cache reuse. A separate process
+enforces a ten-minute wall-time budget for loading and all generations.
 
-### Optional OpenAI-compatible HTTP
-
-No keys belong in git. If a server requires a token, keep it in the
-environment:
-
-```powershell
-$env:RACEENGINEER_LLM_BACKEND = "openai"
-$env:RACEENGINEER_LLM_URL = "http://127.0.0.1:1234/v1"
-$env:RACEENGINEER_LLM_API_KEY = "..."   # optional, local only
-$env:RACEENGINEER_LLM_MODEL = "local-model"
-```
-
-Other optional variables: `RACEENGINEER_LLM_MODEL` (default
-`llama3.2:3b`), `RACEENGINEER_LLM_TIMEOUT` (seconds, default 60).
-
-## Bench
-
-Same fixed synthetic session (20 samples, one `fuel_low` at 10.0 L) for
-every model. N=3 generations. 10 minute abort per model after pull.
-
-```powershell
-$env:PYTHONPATH = "$PWD/src"
-python tools/bench_llm.py --out docs/llm_bench.csv
-```
-
-Columns: `model`, `quant`, `vram_mb`, `pull_ok`, `ttft_s`, `total_s`,
-`words`, `error`.
+`vram_mb` is total GPU memory used in MiB, sampled before and after
+generations, including desktop allocations; it is not isolated model
+memory or a continuously sampled peak. Ollama reported full GPU residency
+for this model. `pull_ok=True` records the successful pull check during
+the original run; future runs only check that the model is installed.
+TTFT measures request to first nonempty text, and total time ends when
+streaming finishes. Pulling, process startup, sanitization and TTS are
+excluded. Words count sanitized output.
 
 ## Results
 
-Bench running; table will be filled from `docs/llm_bench.csv`.
+Rows are generations 1, 2 and 3 in order. Errors below are manual factual
+review findings, added after measurement; the automatic sanitizer accepted
+all three responses.
 
 | model | quant | vram_mb | pull_ok | ttft_s | total_s | words | error |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| pending | | | | | | | |
+| llama3.2:3b | Q4_K_M | 3610 | True | 2.451 | 2.735 | 21 | Unsupported driving advice; historical fuel presented as current |
+| llama3.2:3b | Q4_K_M | 3610 | True | 0.025 | 0.253 | 18 | Unsupported driving advice; historical fuel presented as current |
+| llama3.2:3b | Q4_K_M | 3610 | True | 0.028 | 0.251 | 18 | Unsupported driving advice; historical fuel presented as current |
 
-## Best pick
+## Tone and factual review
 
-Pending bench numbers.
+Each sanitized response contained three sentences. However, all added
+unsupported downshifting advice; generations 2 and 3 also suggested throttle
+adjustments. They described historical fuel readings of 10.5, 10.6 and
+10.9 L as current, instead of the final valid 9.6 L. Generation 1 also used
+the 10.5 L reading from the invalid sample. Quotation marks produced an
+awkward final punctuation sequence in the sanitized output.
 
-- Live radio: lowest reliable TTFT that stays on-GPU and keeps the
-  radio tone, without inventing numbers.
-- Post-lap: a larger quant or size if it finishes without swapping.
+The numeric sanitizer only checks whether numbers appear somewhere in the
+input. It does not validate chronology, relationships, or driving advice.
+These outputs therefore fail the requested grounded radio briefing standard,
+despite meeting the two-to-five-sentence count.
 
-## Failures
+Warm generation completed below two seconds, but cold generation did not.
+Identical cached prompts do not establish latency for changing telemetry.
+Keep `llama3.2:3b` for local experimentation; this run does not justify
+using its unchecked output for live radio or post-lap briefings. The
+deterministic alert remains available independently. No comparative model
+recommendation is made because the larger benchmark was cancelled.
 
-Pending. Expected on this 6 GB card: 12B/14B and 8B Q8 will likely
-offload or abort. `gemma2:9b-instruct` is not an official tag;
-the bench falls back to `gemma2:9b-instruct-q4_0`.
+## Validation and cleanup
+
+The 21 existing unit tests passed without GPU inference before the stop
+instruction. No tests were rerun afterward. The deterministic rules and
+sample pipeline were not changed.
+
+The benchmark and pull workers were terminated. Ollama lists only
+`llama3.2:3b`, with no loaded model. The cancelled download did not create
+another installed model. Its partial files could not be inspected or
+removed from the service-owned model store because sudo requires an
+interactive password; administrative cleanup remains pending.

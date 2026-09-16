@@ -1,0 +1,4 @@
+model,quant,vram_mb,pull_ok,ttft_s,total_s,words,error
+llama3.2:3b,Q4_K_M,3610,True,2.451,2.735,21,review: unsupported driving advice; historical fuel presented as current
+llama3.2:3b,Q4_K_M,3610,True,0.025,0.253,18,review: unsupported driving advice; historical fuel presented as current
+llama3.2:3b,Q4_K_M,3610,True,0.028,0.251,18,review: unsupported driving advice; historical fuel presented as current

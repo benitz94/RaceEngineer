@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Bench local Ollama models on one fixed synthetic fuel_low session."""
+"""Bench the installed llama3.2:3b on one fixed synthetic fuel_low session."""
 
 import argparse
 import csv
 import io
 import json
+import multiprocessing
 import os
 import re
 import subprocess
@@ -26,22 +27,9 @@ from raceengineer.sources import synthetic  # noqa: E402
 COLUMNS = ("model", "quant", "vram_mb", "pull_ok", "ttft_s", "total_s", "words", "error")
 GENERATIONS = 3
 MODEL_BUDGET_S = 600
-PULL_TIMEOUT_S = 1200
 OLLAMA = os.environ.get("RACEENGINEER_LLM_URL", "http://127.0.0.1:11434").rstrip("/")
 
-# Requested tags first; fallbacks are official Ollama tags used on 404.
-MATRIX = (
-    ("llama3.2:3b", ()),
-    ("llama3.1:8b-instruct-q4_K_M", ()),
-    ("llama3.1:8b-instruct-q5_K_M", ()),
-    ("mistral:7b-instruct", ()),
-    ("qwen2.5:7b-instruct", ()),
-    ("gemma2:9b-instruct", ("gemma2:9b-instruct-q4_0", "gemma2:9b")),
-    ("phi4", ("phi4:14b",)),
-    ("mistral-nemo:12b-instruct-q4_K_M", ("mistral-nemo",)),
-    ("qwen2.5:14b-instruct-q4_K_M", ()),
-    ("llama3.1:8b-instruct-q8_0", ()),
-)
+MODEL = "llama3.2:3b"
 
 
 def session_dicts():
@@ -77,32 +65,6 @@ def local_names():
         return set()
     return {item.get("name") for item in body.get("models", []) if item.get("name")}
 
-
-def pull(name):
-    try:
-        with _post("/api/pull", {"name": name, "stream": True}, PULL_TIMEOUT_S) as response:
-            last = {}
-            for raw in response:
-                line = raw.decode("utf-8", errors="replace").strip()
-                if not line:
-                    continue
-                try:
-                    event = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-                if event.get("error"):
-                    return False, str(event["error"])
-                last = event
-            if last.get("status") in ("success", "already exists") or last.get("digest"):
-                return True, ""
-            return True, ""
-    except urllib.error.HTTPError as error:
-        detail = error.read().decode("utf-8", errors="replace")[:300]
-        return False, f"HTTP {error.code}: {detail or error.reason}"
-    except (OSError, urllib.error.URLError, TimeoutError) as error:
-        return False, str(error) or error.__class__.__name__
-
-
 def show_quant(name):
     try:
         with _post("/api/show", {"name": name}, 30) as response:
@@ -131,35 +93,54 @@ def gpu_used_mb():
 
 def stop_model(name):
     try:
-        subprocess.run(["ollama", "stop", name], timeout=30, check=False,
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        _post("/api/generate", {"model": name, "keep_alive": 0}, 30).close()
     except (OSError, subprocess.SubprocessError):
+        print(f"warning: could not unload {name}", file=sys.stderr, flush=True)
+
+
+def _worker(connection, function, args, kwargs):
+    try:
+        connection.send((True, function(*args, **kwargs)))
+    except Exception as error:
+        connection.send((False, str(error) or type(error).__name__))
+    finally:
+        connection.close()
+
+
+def bounded_call(function, budget_s, *args, **kwargs):
+    """Enforce wall time even when a server keeps trickling stream bytes."""
+    context = multiprocessing.get_context("spawn")
+    receiver, sender = context.Pipe(duplex=False)
+    process = context.Process(target=_worker, args=(sender, function, args, kwargs))
+    process.start()
+    sender.close()
+    try:
+        if not receiver.poll(max(0, budget_s)):
+            raise LLMUnavailable("aborted: wall-time budget exceeded (load/generation)")
         try:
-            _post("/api/generate", {"model": name, "keep_alive": 0, "prompt": " "}, 30).close()
-        except (OSError, urllib.error.URLError, TimeoutError):
-            pass
+            ok, result = receiver.recv()
+        except EOFError as error:
+            raise LLMUnavailable("benchmark worker exited without a result") from error
+        if not ok:
+            raise LLMUnavailable(result)
+        return result
+    finally:
+        receiver.close()
+        process.join(timeout=0.1)
+        if process.is_alive():
+            process.terminate()
+            process.join(timeout=5)
+        if process.is_alive():
+            process.kill()
+            process.join()
 
 
 def row(**fields):
     return {column: fields.get(column, "") for column in COLUMNS}
 
-
-def resolve_and_pull(requested, fallbacks):
-    if re.search(r"70b", requested, re.I):
-        return requested, False, "refusing to pull 70B"
-    tried = []
-    for name in (requested, *fallbacks):
-        tried.append(name)
-        ok, error = pull(name)
-        if ok:
-            return name, True, ""
-        if not re.search(r"404|not found|does not exist|file does not exist", error, re.I):
-            return name, False, error
-    return requested, False, f"404 after {', '.join(tried)}"
-
-
 def bench_model(name, prompt, samples, alerts):
     quant = show_quant(name)
+    stop_model(name)
     deadline = time.monotonic() + MODEL_BUDGET_S
     rows = []
     peak = gpu_used_mb()
@@ -170,8 +151,9 @@ def bench_model(name, prompt, samples, alerts):
                             error="aborted: model budget 10 minutes (swap/load)"))
             break
         try:
-            completion = complete_detailed(
-                prompt, model=name, timeout=remaining, backend="ollama",
+            completion = bounded_call(
+                complete_detailed, remaining, prompt,
+                model=name, timeout=remaining, backend="ollama",
             )
         except LLMUnavailable as error:
             used = gpu_used_mb()
@@ -188,54 +170,56 @@ def bench_model(name, prompt, samples, alerts):
         briefing = speak(samples, alerts, complete=lambda _prompt, text=completion.text: text)
         words = len((briefing or completion.text).split())
         error = "" if briefing else "sanitizer rejected briefing"
+        sentences = len(re.split(r"(?<=[.!?])\s+", briefing)) if briefing else 0
+        if briefing and not 2 <= sentences <= 5:
+            error = f"tone: expected 2-5 sentences, got {sentences}"
         rows.append(row(
             model=name, quant=quant, vram_mb=peak, pull_ok=True,
             ttft_s=f"{completion.ttft_s:.3f}" if completion.ttft_s is not None else "",
             total_s=f"{completion.total_s:.3f}",
             words=words, error=error,
         ))
-        if index == 0:
-            print(briefing or completion.text, file=sys.stderr, flush=True)
+        print(json.dumps({"model": name, "generation": index + 1,
+                          "raw": completion.text, "briefing": briefing,
+                          "sentences": sentences, "metrics": rows[-1]}),
+              file=sys.stderr, flush=True)
+        try:
+            with urllib.request.urlopen(f"{OLLAMA}/api/ps", timeout=5) as response:
+                print("residency: " + response.read().decode(), file=sys.stderr, flush=True)
+        except OSError:
+            pass
     stop_model(name)
     return rows
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--out", help="optional CSV path")
+    parser.add_argument("--out", default=os.path.join(ROOT, "tools", "bench_stdout.csv"),
+                        help="CSV path")
     parser.add_argument("--lang", choices=("en", "it"), default="en")
     args = parser.parse_args(argv)
     os.environ.setdefault("RACEENGINEER_LLM_BACKEND", "ollama")
     samples, alerts = session_dicts()
     prompt = build_prompt(samples, alerts, args.lang)
-    preexisting = local_names()
-    rows = []
-    for requested, fallbacks in MATRIX:
-        print(f"== {requested} ==", file=sys.stderr, flush=True)
-        name, pull_ok, error = resolve_and_pull(requested, fallbacks)
-        if not pull_ok:
-            rows.append(row(model=requested, quant=quant_from_tag(requested),
-                            pull_ok=False, error=error))
-            continue
-        if name != requested:
-            print(f"using official tag {name} instead of {requested}", file=sys.stderr, flush=True)
-        rows.extend(bench_model(name, prompt, samples, alerts))
-        if name not in preexisting:
-            try:
-                subprocess.run(["ollama", "rm", name], timeout=60, check=False,
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            except (OSError, subprocess.SubprocessError):
-                pass
+    if MODEL not in local_names():
+        raise SystemExit(f"{MODEL} is not installed or Ollama is unavailable; no download started")
+    print(f"== {MODEL} ==", file=sys.stderr, flush=True)
+    rows = bench_model(MODEL, prompt, samples, alerts)
+    write_csv(args.out, rows)
     buffer = io.StringIO()
-    writer = csv.DictWriter(buffer, fieldnames=COLUMNS)
+    writer = csv.DictWriter(buffer, fieldnames=COLUMNS, lineterminator="\n")
     writer.writeheader()
     writer.writerows(rows)
     text = buffer.getvalue()
     sys.stdout.write(text)
-    if args.out:
-        with open(args.out, "w", encoding="utf-8", newline="") as handle:
-            handle.write(text)
     return 0
+
+
+def write_csv(path, rows):
+    with open(path, "w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=COLUMNS, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 if __name__ == "__main__":
