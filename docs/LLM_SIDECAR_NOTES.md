@@ -93,6 +93,6 @@ sample pipeline were not changed.
 
 The benchmark and pull workers were terminated. Ollama lists only
 `llama3.2:3b`, with no loaded model. The cancelled download did not create
-another installed model. Its partial files could not be inspected or
-removed from the service-owned model store because sudo requires an
-interactive password; administrative cleanup remains pending.
+another installed model. On 2026-09-16, the owner confirmed completing the
+targeted sudo cleanup of that download's partial files in the service-owned
+model store. The cleanup preserves `llama3.2:3b`.

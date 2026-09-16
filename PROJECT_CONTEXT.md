@@ -29,9 +29,9 @@ installed `llama3.2:3b` remains in scope. Three measured generations are in
 `tools/bench_stdout.csv`, with methodology and factual failures documented
 in `docs/LLM_SIDECAR_NOTES.md`. The benchmark tool does not download models.
 No further downloads or tests are authorized by the current instruction.
-Cleanup of the cancelled partial download in service-owned Ollama storage
-requires administrative access. The 21 existing tests passed before work
-was stopped; deterministic rules and the sample pipeline are unchanged.
+The owner confirmed cleanup of the cancelled partial download on 2026-09-16.
+The 21 existing tests passed before work was stopped; deterministic rules
+and the sample pipeline are unchanged.
 
 The public repository is `benitz94/RaceEngineer`. English is the official
 repository language. The public license is GPL-3.0-only; external contributions
