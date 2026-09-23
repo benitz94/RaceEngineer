@@ -4,18 +4,23 @@ Last updated: 2026-09-23
 
 ## Current State
 
-RaceEngineer has its first simulator-independent data-recovery slice in Python:
-a nullable sample model, repeatable synthetic source, versioned JSONL recording
-and file replay, text CLI output, and an optional UDP metadata probe.
+Implementation of the intended Linux platform is blocked until two local
+models are chosen:
 
-A deterministic rules engine tracks the last valid fuel and lap and suppresses
-repeated low-fuel alerts. Valid fuel at or below the configurable 10.0-litre
-default triggers a structured alert; valid fuel above 12.0 litres or an explicit
-source restart resets suppression. Missing or invalid fuel does not trigger.
-Synthetic and file CLI modes print samples and alerts by default, with
-`--alerts-only` and `--samples-only` output options. Sample JSONL stays version 1;
-sample-only output remains replayable. The default synthetic scenario crosses
-the low-fuel threshold. UDP remains a metadata probe only.
+1. the LLM;
+2. the Jev-like AI model that sits beside the race engineer for decision
+   support.
+
+Those choices determine VRAM and therefore the GPU. An AMD Radeon is the
+expected family; the exact card cannot be selected yet. Without that
+knowledge the target machine cannot be specified, installed, or built.
+Raspberry Pi is not a target.
+
+A small simulator-independent recovery slice already exists in Python: a
+nullable sample model, repeatable synthetic source, versioned JSONL recording
+and file replay, text CLI output, an optional UDP metadata probe, and a
+deterministic low-fuel rule. That slice is not a substitute for choosing the
+models. It does not define the production hardware.
 
 Runtime and offline tests use only the Python standard library. Python 3.10 or
 newer is required. Run instructions and recording semantics are documented in
@@ -26,15 +31,14 @@ The public repository is `benitz94/RaceEngineer`. English is the official
 repository language. The public license is GPL-3.0-only; external contributions
 require the existing CLA.
 
-The reference runtime is a Linux machine. Optional local models are expected
-to need an AMD Radeon GPU with substantial VRAM. Raspberry Pi is not a target.
-Development and offline validation occur without a simulator. No simulator
+Development of further platform work waits on the model decision. No simulator
 protocol adapter is implemented.
 
 ## Next Objective
 
-Select the next bounded slice with the project owner. Broader session lifecycle
-handling, additional rules, alert delivery, and replay controls remain pending.
+Choose the LLM and the Jev-like companion model, document their VRAM needs,
+and from that select the AMD Radeon card. Contributors should help with that
+selection before proposing unrelated feature work.
 
 ## Essential Files
 
