@@ -38,8 +38,8 @@ Activities:
 - define the process for documenting decisions;
 - define the minimum requirements for the first prototype;
 - define the initial Python project structure;
-- select initial libraries only after verifying their compatibility with the
-  Raspberry Pi 3B+;
+- select initial libraries only after verifying their compatibility with Linux
+  and, where relevant, AMD Radeon drivers;
 - document the available hardware configuration.
 
 Completion criteria:
@@ -104,7 +104,7 @@ Goal: deliver alerts to the driver without mandatory cloud services.
 
 Activities:
 
-- evaluate local TTS engines compatible with the Raspberry Pi 3B+;
+- evaluate local TTS engines compatible with Linux;
 - select an initial Italian voice;
 - add a TTS adapter separate from the core;
 - manage alert priority, queuing, and duplicate suppression;
@@ -118,16 +118,16 @@ Completion criteria:
 - the alert remains available through the log and text output;
 - resource usage and latency are documented.
 
-## Phase 4 — Complete Validation on Raspberry Pi 3B+
+## Phase 4 — Complete Validation on the Reference Linux Machine
 
-Goal: verify self-contained, continuous core operation on the initial hardware
-before integrating a real simulator.
+Goal: verify self-contained, continuous core operation on the reference Linux
+hardware before integrating a real simulator.
 
 Validation will use synthetic and recorded telemetry.
 
 Activities:
 
-- install the core on the Raspberry Pi 3B+;
+- install the core on the reference Linux machine;
 - configure automatic startup;
 - verify the pipeline with synthetic telemetry;
 - verify recorded telemetry replay;
@@ -149,7 +149,7 @@ Completion criteria:
 - the core operates using synthetic and recorded telemetry;
 - it recovers from anticipated errors;
 - a voice-output failure does not block analysis;
-- Raspberry Pi 3B+ performance and limitations are documented;
+- Linux and GPU performance and limitations are documented;
 - any optimizations are justified by real-world measurements;
 - another user can reproduce the test bench by following the guide;
 - the core is considered validated before connection to a real simulator.
@@ -173,7 +173,7 @@ Activities:
 - evaluate any required transformations or decoding;
 - evaluate licensing, distribution, and documentation considerations;
 - capture a short technical recording, if legally and technically possible;
-- measure reception on the Raspberry Pi 3B+;
+- measure reception on the reference Linux machine;
 - document results, limitations, and risks.
 
 Completion criteria:
@@ -202,8 +202,8 @@ Activities:
 - handle missing, duplicate, or out-of-order data;
 - compare real and recorded data;
 - run an end-to-end session;
-- measure latency and resource usage on the Raspberry Pi 3B+;
-- document console or simulator, network, and Raspberry Pi configuration.
+- measure latency and resource usage on the reference Linux machine;
+- document console or simulator, network, and Linux host configuration.
 
 Completion criteria:
 
@@ -231,7 +231,7 @@ Possible directions:
 - support for other simulators;
 - optional local or remote LLM;
 - distribution through a ready-to-use image or installer;
-- support for Raspberry Pi 5 and mini PCs.
+- support for additional Linux workstations and mini PCs.
 
 These items represent future possibilities, not already approved requirements.
 
