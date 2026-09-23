@@ -9,6 +9,21 @@ The official repository language is English. Discussion with the
 maintainer may be in Italian. Files committed to the repository must be
 in English.
 
+## Current work that helps
+
+The project is blocked until these are chosen:
+
+1. the local LLM;
+2. the Jev-like AI model that sits beside the race engineer for
+   decision support.
+
+Those choices set VRAM and the AMD Radeon card. The intended Linux
+machine cannot be specified or built before that.
+
+Helpful contributions right now are model proposals with VRAM figures
+and whether both models can run on one GPU. Unrelated feature work
+should wait.
+
 ## License
 
 RaceEngineer is licensed under the GNU General Public License version 3
