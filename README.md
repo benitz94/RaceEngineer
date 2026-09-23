@@ -21,6 +21,9 @@ The intended platform cannot be started until two local models are chosen:
 2. the Jev-like AI model that sits beside the race engineer for decision
    support.
 
+Both models must be free to obtain and run locally. Paid weights and paid
+cloud APIs are not acceptable.
+
 Those two choices determine how much VRAM is required and therefore which GPU
 to buy. An AMD Radeon is the expected family. The exact card is unknown until
 the models are known.
@@ -28,7 +31,7 @@ the models are known.
 Without that knowledge the project cannot be sized, installed, or built for
 the intended Linux machine.
 
-If you want to help, start here: propose candidate models, their VRAM
+If you want to help, start here: propose free candidate models, their VRAM
 footprints, and whether both can run together on one AMD Radeon. Other feature
 work waits on this decision.
 
@@ -95,9 +98,10 @@ functionality.
 ### Models and hardware first
 
 The LLM and the Jev-like companion model are not optional unknowns. They must
-be chosen before the target machine is specified. Critical race alerts may
-still be produced by deterministic rules, but the intended product includes
-those local models and cannot be built until their VRAM cost is known.
+be free, local, and chosen before the target machine is specified. Critical
+race alerts may still be produced by deterministic rules, but the intended
+product includes those local models and cannot be built until their VRAM cost
+is known.
 
 ### Performance First
 
@@ -162,8 +166,8 @@ The first prototype will be a minimal local pipeline:
 7. when available, play the same alert through local TTS;
 8. record events, alerts, and diagnostic data.
 
-The intended platform still requires the LLM and Jev-like model decision
-before hardware is purchased and the full system is built.
+The intended platform still requires the free LLM and free Jev-like model
+decision before hardware is purchased and the full system is built.
 
 The prototype will not initially include:
 
