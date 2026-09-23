@@ -8,57 +8,52 @@ component.
 ## Roles
 
 1. Deterministic rules (`src/raceengineer/rules.py`) remain the source of
-   critical facts such as low fuel. Missing data must not invent a decision.
-   Rule strings are for logs and last-resort text if the language model is
-   down. They are not the voice the driver should hear in a normal session.
-2. A **typed decision model** answers bounded questions with labels and
-   optional probabilities. It does not generate radio speech.
-3. A **language model** turns an approved alert plus session context into a
-   short spoken briefing that should sound like a human race engineer.
-   Current evaluation candidate: `qwen3.5:4b`. It must stay disableable for
-   tests and for core operation without a GPU.
+   critical alerts such as low fuel. Missing data must not invent a decision.
+   Fuel level, validity, and hysteresis stay here. A critical rule alert
+   already has its sentence; that sentence is the radio call.
+2. A **typed decision model** is a control layer. It answers bounded questions
+   with labels and optional probabilities. It does not generate radio speech.
+3. A **language model** may write a short briefing only after a declared skill
+   has answered `brief` on a task where a briefing is allowed. Current
+   evaluation candidate: `qwen3.5:4b`. It must stay disableable.
 
 The typed decision model sits beside the language model. It must not replace
 rules and it must not replace voice generation.
 
 ## When it runs
 
-The decision model is used only on tasks where a closed label is faster or
-safer than open text. If the job is already "explain this to the driver",
-call the language model directly.
+The decision model runs only when a caller has declared one of its skills and
+that skill is the job. No declared question, no call. It is not invoked on
+every sample.
 
-The concrete case list is not frozen yet. The intent is lower radio latency
-and fewer invented facts, not a canned-phrase product.
+Skills:
 
-A working sketch, not a contract:
+- `speak` / `hold` — whether the radio may open, when the moment is not
+  already decided by rules
+- `canned` / `brief` — whether the existing rule sentence is enough or a
+  briefing is allowed
+- `grounded` / `reject` — whether a generated sentence invents telemetry
 
-1. Rules emit a structured alert (fact + machine message for the log).
-2. If the task matches a declared decision question, the typed model may
-   answer first (`speak`/`hold`, later cases as defined).
-3. If the answer is `hold`, do not call the language model and do not speak.
-4. If the answer is `speak`, or the task is a briefing outside the decision
-   set, call the language model. Do not read the raw rule string on air.
-5. After a generated sentence, an optional `grounded`/`reject` check may run.
-   Reject drops that sentence. The log still keeps the rule text. The driver
-   does not get a slogan as the intended radio style.
+Working sketch:
 
-If the decision model is missing or times out, continue with rules plus the
-language model. Do not block the session.
+1. Rules emit a structured alert, including the rule sentence.
+2. If no decision skill is declared for this task, do not call the decision
+   model. A critical alert goes on the radio as the rule sentence. Do not
+   send it to the language model by default.
+3. If `speak`/`hold` is declared and the answer is `hold`, do not speak.
+4. If `canned`/`brief` is declared and the answer is `canned`, speak the rule
+   sentence. If the answer is `brief` and a briefing is allowed for that task,
+   call the language model.
+5. After a generated sentence, if `grounded`/`reject` is declared, reject
+   drops that sentence. The rule sentence remains available.
 
-## Allowed question shapes
+A local check of `qwen3.5:4b` on fuel 10.0 / `fuel_low` returned in 0.98 s and
+invented a corner. Speed without a declared skill is not a radio path. The
+rule sentence "Fuel low. Box this lap." was already the control.
 
-Callers declare the question and the legal answers in advance. The model
-returns one of those answers. Typical first questions:
-
-- `speak` or `hold` — whether the radio may talk now
-- `grounded` or `reject` — whether a generated sentence invents telemetry
-
-`canned` versus `brief` is not a driver-facing choice. Briefings are the
-language model's job.
-
-Implementation may use yes/no, a fixed choice list, or an ordered score. The
-wire format is an internal RaceEngineer concern. Do not depend on a paid
-cloud decision API.
+If the decision model is missing or times out, the session continues with
+rules. The language model continues only for a briefing that was already
+approved. The session does not block.
 
 ## Constraints
 
