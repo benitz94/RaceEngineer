@@ -13,8 +13,9 @@ Its goal is to receive telemetry from a simulator, analyze it using
 deterministic logic, and provide the driver with useful information during and
 after the session.
 
-The project is designed as a self-contained, reproducible platform, initially
-running on a Raspberry Pi 3B+.
+The project is designed as a self-contained, reproducible platform running on
+a Linux machine. Optional local models are expected to need an AMD Radeon GPU
+with substantial VRAM.
 
 ## Project Status
 
@@ -36,7 +37,7 @@ The project's initial language is Python.
 This choice is motivated by:
 
 - rapid development;
-- Raspberry Pi compatibility;
+- Linux compatibility;
 - integration with AI, Ollama, STT, and TTS;
 - availability of a broad library ecosystem.
 
@@ -114,8 +115,9 @@ not introduce simulator-specific logic into the core.
 
 ### Hardware Independence
 
-The initial platform is the Raspberry Pi 3B+, but the architecture must not
-depend on a specific computer model.
+The reference platform is a Linux machine, typically with an AMD Radeon GPU
+and substantial VRAM for optional local models. The architecture must not
+depend on a specific motherboard or GPU model.
 
 The hardware may evolve based on real-world performance measurements and
 needs.
@@ -167,15 +169,13 @@ The prototype will not initially include:
 
 Initial test bench:
 
-- Raspberry Pi 3B+;
-- power supply;
-- microSD card, capacity and class to be determined;
+- a Linux workstation or mini PC;
+- an AMD Radeon GPU with substantial VRAM, for optional local models;
 - Ethernet or Wi-Fi connection;
 - USB lavalier microphone, not required for the first prototype;
-- USB DAC connected to a mixer;
-- audio mixer;
-- headphones;
-- optional heat sink or fan.
+- local audio output (DAC, mixer, and headphones as needed).
+
+Raspberry Pi is not a target platform.
 
 Component models, alternatives, requirements, and configuration will be
 documented during development.
