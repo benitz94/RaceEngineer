@@ -7,12 +7,14 @@ Last updated: 2026-09-23
 Implementation of the intended Linux platform is blocked until two local
 models are chosen:
 
-1. the LLM;
-2. the Jev-like AI model that sits beside the race engineer for decision
-   support.
+1. the language model that writes short radio briefings;
+2. the typed decision model that sits beside that language model and answers
+   bounded questions (speak or hold, canned text or briefing, grounded or
+   reject).
 
 Both models must be free to obtain and run locally. Paid weights and paid
-cloud APIs are not acceptable.
+cloud APIs are not acceptable. Intent and constraints are in
+`docs/DECISION_MODEL.md`.
 
 Those choices determine VRAM and therefore the GPU. An AMD Radeon is the
 expected family; the exact card cannot be selected yet. Without that
@@ -23,7 +25,8 @@ A small simulator-independent recovery slice already exists in Python: a
 nullable sample model, repeatable synthetic source, versioned JSONL recording
 and file replay, text CLI output, an optional UDP metadata probe, and a
 deterministic low-fuel rule. That slice is not a substitute for choosing the
-models. It does not define the production hardware.
+models. It does not define the production hardware. Critical alerts stay in
+rules code; they are not delegated to either model.
 
 Runtime and offline tests use only the Python standard library. Python 3.10 or
 newer is required. Run instructions and recording semantics are documented in
@@ -39,9 +42,11 @@ protocol adapter is implemented.
 
 ## Next Objective
 
-Choose a free local LLM and a free Jev-like companion model, document their
-VRAM needs, and from that select the AMD Radeon card. Contributors should help
-with that selection before proposing unrelated feature work.
+Choose a free local language model and a free local typed decision model,
+document their VRAM needs, and from that select the AMD Radeon card.
+Contributors should help with that selection before proposing unrelated
+feature work. Evaluation may start from a 4B-class local checkpoint already
+used for short speech, with a smaller decision head if it fits the same GPU.
 
 ## Essential Files
 
@@ -51,3 +56,4 @@ with that selection before proposing unrelated feature work.
 4. `ROADMAP.md` — broader implementation sequence.
 5. `AGENTS.md` — repository working rules.
 6. `docs/DATA_RECOVERY.md` — current demo and recording format.
+7. `docs/DECISION_MODEL.md` — planned typed decision model beside the LLM.
