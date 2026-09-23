@@ -1,5 +1,16 @@
 # PROJECT_JOURNAL.md
 
+## Typed Decision Model Beside the LLM — 2026-09-23
+
+Decision:
+
+RaceEngineer will add a local typed decision model beside the language model.
+The language model writes short radio briefings. The decision model answers
+only declared questions such as speak/hold, canned/brief, and grounded/reject.
+Deterministic rules keep critical alerts. Both models must be free and local.
+Paid cloud decision APIs are out of scope. Intent lives in
+`docs/DECISION_MODEL.md`. No implementation in this change.
+
 ## First Deterministic Fuel Rule — 2026-09-13
 
 The sample pipeline now produces a structured low-fuel alert from explicitly
