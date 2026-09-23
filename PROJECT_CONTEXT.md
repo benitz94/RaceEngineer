@@ -24,9 +24,11 @@ Raspberry Pi is not a target.
 A small simulator-independent recovery slice already exists in Python: a
 nullable sample model, repeatable synthetic source, versioned JSONL recording
 and file replay, text CLI output, an optional UDP metadata probe, and a
-deterministic low-fuel rule. That slice is not a substitute for choosing the
-models. It does not define the production hardware. Critical alerts stay in
-rules code; they are not delegated to either model.
+deterministic low-fuel rule. A `fuel_low` alert also prints a versioned radio
+line whose text is the rule message (`raceengineer.radio` version 1,
+`source: rule`). That slice is not a substitute for choosing the models. It
+does not define the production hardware. Critical alerts stay in rules code;
+they are not delegated to either model.
 
 Runtime and offline tests use only the Python standard library. Python 3.10 or
 newer is required. Run instructions and recording semantics are documented in

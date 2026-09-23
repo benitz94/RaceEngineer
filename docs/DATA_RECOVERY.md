@@ -23,14 +23,16 @@ Ctrl+C stops replay or UDP. UDP optionally stops after `--count` datagrams;
 
 ## Fuel Rule and Alerts
 
-Synthetic and file modes print samples followed by any triggered alert by
-default. Use `--alerts-only` to suppress samples, or `--samples-only` to capture
-a replayable recording. Mixed sample/alert output is a diagnostic stream, not
-a sample recording accepted by file replay. The sample format remains version 1.
-UDP stays a metadata probe and does not run telemetry rules.
+Synthetic and file modes print each sample, then a triggered alert, then the
+radio line for that alert. Use `--alerts-only` to print alerts, `--radio-only`
+to print radio lines, or `--samples-only` to capture a replayable recording.
+Mixed output is a diagnostic stream, not a sample recording accepted by file
+replay. The sample format remains version 1. UDP stays a metadata probe and
+does not run telemetry rules.
 
 ```powershell
 python -m raceengineer.demo --source synthetic --alerts-only
+python -m raceengineer.demo --source synthetic --radio-only
 python -m raceengineer.demo --source synthetic --fuel-low-threshold 9.8 --alerts-only
 ```
 
@@ -50,6 +52,12 @@ sample's source time, falling back to receipt time, then null; no clock value
 is invented. Each CLI run starts a fresh session. Programmatic users call
 `RulesEngine.restart()` when restarting a source; restarts are not inferred
 from missing fields, lap changes, or out-of-order timestamps.
+
+A `fuel_low` alert also prints one radio line: `format: "raceengineer.radio"`,
+`version: 1`, and a `radio` object with `source: "rule"`, `type: "fuel_low"`,
+`text` equal to the alert message, and the same timestamp. The line is the
+rule sentence. No language model is called. Missing or invalid fuel still
+produces neither an alert nor a radio line.
 
 ## Version 1 Recording
 

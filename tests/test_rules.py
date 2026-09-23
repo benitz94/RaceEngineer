@@ -9,7 +9,7 @@ from unittest.mock import patch
 from raceengineer.demo import main
 from raceengineer.model import Sample
 from raceengineer.recording import encode
-from raceengineer.rules import RulesEngine
+from raceengineer.rules import RulesEngine, rule_radio
 
 
 class RulesTests(unittest.TestCase):
@@ -34,6 +34,28 @@ class RulesTests(unittest.TestCase):
         self.assertEqual(engine.state.last_valid_fuel, 15)
         self.assertEqual(engine.state.lap, 2)
         self.assertFalse(engine.state.fuel_alert_fired)
+
+    def test_fuel_low_radio_copies_the_rule_message(self):
+        engine = RulesEngine()
+        alert = engine.process(Sample(fuel=10.0, valid=True, source_ts=0, recv_ts=5, lap=2))
+        self.assertEqual(json.loads(rule_radio(alert).encode()), {
+            "format": "raceengineer.radio", "version": 1,
+            "radio": {"source": "rule", "type": "fuel_low",
+                      "text": "Fuel low. Box this lap.", "timestamp": 0},
+        })
+        self.assertIsNone(engine.process(Sample(fuel=9.9, valid=True, source_ts=1)))
+
+    def test_missing_and_invalid_fuel_produce_no_radio(self):
+        samples = [Sample(fuel=None, valid=True), Sample(fuel=9, lap=3, valid=False), Sample(fuel=9)]
+        with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
+            path = Path(directory) / "samples.jsonl"
+            path.write_text("\n".join(map(encode, samples)), encoding="utf-8")
+            records = self.run_cli(["--source", "file", str(path)])
+            alerts = self.run_cli(["--source", "file", str(path), "--alerts-only"])
+            radios = self.run_cli(["--source", "file", str(path), "--radio-only"])
+        self.assertEqual(alerts, [])
+        self.assertEqual(radios, [])
+        self.assertTrue(all(record["format"] == "raceengineer.sample" for record in records))
 
     def test_hysteresis_only_resets_above_twelve_with_valid_fuel(self):
         engine = RulesEngine()
@@ -70,11 +92,19 @@ class RulesTests(unittest.TestCase):
         arguments = ["--source", "synthetic"]
         records = self.run_cli(arguments)
         self.assertEqual(records, self.run_cli(arguments))
-        self.assertEqual(len(records), 21)
+        self.assertEqual(len(records), 22)
         alerts = [record for record in records if record["format"] == "raceengineer.alert"]
+        radios = [record for record in records if record["format"] == "raceengineer.radio"]
         self.assertEqual(len(alerts), 1)
+        self.assertEqual(len(radios), 1)
         self.assertEqual(alerts[0]["alert"]["fuel"], 10)
+        self.assertEqual(radios[0]["radio"]["source"], "rule")
+        self.assertEqual(radios[0]["radio"]["text"], "Fuel low. Box this lap.")
+        self.assertEqual(radios[0]["radio"]["timestamp"], alerts[0]["alert"]["timestamp"])
+        alert_at = next(index for index, record in enumerate(records) if record["format"] == "raceengineer.alert")
+        self.assertEqual(records[alert_at + 1]["format"], "raceengineer.radio")
         self.assertEqual(self.run_cli(arguments + ["--alerts-only"]), alerts)
+        self.assertEqual(self.run_cli(arguments + ["--radio-only"]), radios)
         self.assertEqual(len(self.run_cli(arguments + ["--samples-only"])), 20)
 
     def test_file_pipeline(self):

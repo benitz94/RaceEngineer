@@ -4,7 +4,7 @@ import argparse
 import json
 import sys
 from .recording import encode
-from .rules import FUEL_LOW_THRESHOLD, RulesEngine
+from .rules import FUEL_LOW_THRESHOLD, RulesEngine, rule_radio
 from .sources import paced, replay, synthetic, validate_rate
 from .udp_probe import probe
 
@@ -20,6 +20,7 @@ def main(argv=None):
     output = parser.add_mutually_exclusive_group()
     output.add_argument("--alerts-only", action="store_true", help="suppress sample output")
     output.add_argument("--samples-only", action="store_true", help="print replayable sample recordings only")
+    output.add_argument("--radio-only", action="store_true", help="print radio lines only")
     parser.add_argument("--fuel-low-threshold", type=float, default=FUEL_LOW_THRESHOLD)
     args = parser.parse_args(argv)
     if args.source == "file" and not args.path:
@@ -32,8 +33,8 @@ def main(argv=None):
         parser.error("--count must be nonnegative")
     if not 0 <= args.port <= 65535:
         parser.error("--port must be between 0 and 65535")
-    if args.source == "udp" and (args.alerts_only or args.samples_only):
-        parser.error("sample and alert output flags are not supported for UDP metadata")
+    if args.source == "udp" and (args.alerts_only or args.samples_only or args.radio_only):
+        parser.error("sample, alert, and radio output flags are not supported for UDP metadata")
     try:
         validate_rate(args.rate)
         if args.source == "udp":
@@ -43,11 +44,15 @@ def main(argv=None):
             engine = RulesEngine(args.fuel_low_threshold)
             samples = synthetic(20 if args.count is None else args.count, args.rate) if args.source == "synthetic" else replay(args.path)
             for sample in paced(samples, args.rate):
-                if not args.alerts_only:
+                if not args.alerts_only and not args.radio_only:
                     print(encode(sample), flush=True)
                 alert = engine.process(sample)
-                if alert is not None and not args.samples_only:
+                if alert is None or args.samples_only:
+                    continue
+                if not args.radio_only:
                     print(alert.encode(), flush=True)
+                if not args.alerts_only:
+                    print(rule_radio(alert).encode(), flush=True)
     except (ValueError, OSError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1

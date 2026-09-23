@@ -32,6 +32,25 @@ class Alert:
         )
 
 
+@dataclass(frozen=True)
+class Radio:
+    source: str
+    type: str
+    text: str
+    timestamp: float | None
+
+    def encode(self) -> str:
+        return json.dumps(
+            {"format": "raceengineer.radio", "version": 1, "radio": asdict(self)},
+            sort_keys=True, separators=(",", ":"), allow_nan=False,
+        )
+
+
+def rule_radio(alert: Alert) -> Radio:
+    """Copy a critical rule alert onto the radio. No model is consulted."""
+    return Radio("rule", alert.type, alert.message, alert.timestamp)
+
+
 class RulesEngine:
     def __init__(self, fuel_low_threshold=FUEL_LOW_THRESHOLD):
         if not math.isfinite(fuel_low_threshold) or not 0 <= fuel_low_threshold < FUEL_RESET_THRESHOLD:
