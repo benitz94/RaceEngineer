@@ -33,6 +33,7 @@ does not run telemetry rules.
 ```powershell
 python -m raceengineer.demo --source synthetic --alerts-only
 python -m raceengineer.demo --source synthetic --radio-only
+python -m raceengineer.demo --source synthetic --radio-only --speak
 python -m raceengineer.demo --source synthetic --fuel-low-threshold 9.8 --alerts-only
 ```
 
@@ -55,9 +56,14 @@ from missing fields, lap changes, or out-of-order timestamps.
 
 A `fuel_low` alert also prints one radio line: `format: "raceengineer.radio"`,
 `version: 1`, and a `radio` object with `source: "rule"`, `type: "fuel_low"`,
-`text` equal to the alert message, and the same timestamp. The line is the
-rule sentence. No language model is called. Missing or invalid fuel still
-produces neither an alert nor a radio line.
+`text: "Benzina bassa. Boxa questo giro."`, and the same timestamp. The alert
+message stays the English log line. No language model is called. Missing or
+invalid fuel still produces neither an alert nor a radio line.
+
+`--speak` says that radio text with local Windows speech (System.Speech). It
+uses an installed Italian voice when one is present. If speech fails, the
+radio line is still printed and an error is written to stderr. `--speak` does
+nothing when no radio line is produced.
 
 ## Version 1 Recording
 

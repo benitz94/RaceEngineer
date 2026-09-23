@@ -2,11 +2,48 @@
 
 import argparse
 import json
+import os
+import subprocess
 import sys
 from .recording import encode
 from .rules import FUEL_LOW_THRESHOLD, RulesEngine, rule_radio
 from .sources import paced, replay, synthetic, validate_rate
 from .udp_probe import probe
+
+_SPEAK_SCRIPT = r"""
+$ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName System.Speech
+$synth = New-Object System.Speech.Synthesis.SpeechSynthesizer
+$italian = @($synth.GetInstalledVoices() | Where-Object {
+    $_.Enabled -and $_.VoiceInfo.Culture.TwoLetterISOLanguageName -eq 'it'
+})
+if ($italian.Count -gt 0) {
+    $synth.SelectVoice($italian[0].VoiceInfo.Name)
+}
+$synth.Speak($env:RACEENGINEER_RADIO_TEXT)
+"""
+
+
+def speak(text: str) -> None:
+    """Speak one radio line with Windows SAPI. Raises RuntimeError on failure."""
+    env = os.environ.copy()
+    env["RACEENGINEER_RADIO_TEXT"] = text
+    try:
+        completed = subprocess.run(
+            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", _SPEAK_SCRIPT],
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=30,
+        )
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("timed out") from None
+    except OSError as error:
+        raise RuntimeError(f"could not run powershell.exe: {error}") from error
+    if completed.returncode != 0:
+        detail = (completed.stderr or completed.stdout or "Windows speech failed").strip()
+        raise RuntimeError(detail)
 
 
 def main(argv=None):
@@ -21,6 +58,7 @@ def main(argv=None):
     output.add_argument("--alerts-only", action="store_true", help="suppress sample output")
     output.add_argument("--samples-only", action="store_true", help="print replayable sample recordings only")
     output.add_argument("--radio-only", action="store_true", help="print radio lines only")
+    parser.add_argument("--speak", action="store_true", help="speak radio lines with local Windows speech")
     parser.add_argument("--fuel-low-threshold", type=float, default=FUEL_LOW_THRESHOLD)
     args = parser.parse_args(argv)
     if args.source == "file" and not args.path:
@@ -43,6 +81,7 @@ def main(argv=None):
         else:
             engine = RulesEngine(args.fuel_low_threshold)
             samples = synthetic(20 if args.count is None else args.count, args.rate) if args.source == "synthetic" else replay(args.path)
+            speech_failed = False
             for sample in paced(samples, args.rate):
                 if not args.alerts_only and not args.radio_only:
                     print(encode(sample), flush=True)
@@ -51,8 +90,19 @@ def main(argv=None):
                     continue
                 if not args.radio_only:
                     print(alert.encode(), flush=True)
-                if not args.alerts_only:
-                    print(rule_radio(alert).encode(), flush=True)
+                if args.alerts_only:
+                    continue
+                radio = rule_radio(alert)
+                print(radio.encode(), flush=True)
+                if not args.speak:
+                    continue
+                try:
+                    speak(radio.text)
+                except RuntimeError as error:
+                    speech_failed = True
+                    print(f"error: speech failed: {error}", file=sys.stderr)
+            if speech_failed:
+                return 1
     except (ValueError, OSError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1

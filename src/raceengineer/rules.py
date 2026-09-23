@@ -8,6 +8,8 @@ from .model import Sample
 
 FUEL_LOW_THRESHOLD = 10.0
 FUEL_RESET_THRESHOLD = 12.0
+FUEL_LOW_MESSAGE = "Fuel low. Box this lap."
+FUEL_LOW_RADIO_TEXT = "Benzina bassa. Boxa questo giro."
 
 
 @dataclass
@@ -47,8 +49,8 @@ class Radio:
 
 
 def rule_radio(alert: Alert) -> Radio:
-    """Copy a critical rule alert onto the radio. No model is consulted."""
-    return Radio("rule", alert.type, alert.message, alert.timestamp)
+    """Driver-facing line for a fuel_low alert. The log message stays English."""
+    return Radio("rule", alert.type, FUEL_LOW_RADIO_TEXT, alert.timestamp)
 
 
 class RulesEngine:
@@ -75,5 +77,5 @@ class RulesEngine:
         if sample.fuel <= self.fuel_low_threshold and not self.state.fuel_alert_fired:
             self.state.fuel_alert_fired = True
             timestamp = sample.source_ts if sample.source_ts is not None else sample.recv_ts
-            return Alert("fuel_low", "high", timestamp, sample.fuel, "Fuel low. Box this lap.")
+            return Alert("fuel_low", "high", timestamp, sample.fuel, FUEL_LOW_MESSAGE)
         return None
