@@ -44,7 +44,7 @@ class RulesTests(unittest.TestCase):
         self.assertEqual(json.loads(rule_radio(alert).encode()), {
             "format": "raceengineer.radio", "version": 1,
             "radio": {"source": "rule", "type": "fuel_low",
-                      "text": "Benzina bassa. Boxa questo giro.", "timestamp": 0},
+                      "text": "Box, box. Questo giro.", "timestamp": 0},
         })
         self.assertIsNone(engine.process(Sample(fuel=9.9, valid=True, source_ts=1)))
 
@@ -102,7 +102,7 @@ class RulesTests(unittest.TestCase):
         self.assertEqual(len(radios), 1)
         self.assertEqual(alerts[0]["alert"]["fuel"], 10)
         self.assertEqual(radios[0]["radio"]["source"], "rule")
-        self.assertEqual(radios[0]["radio"]["text"], "Benzina bassa. Boxa questo giro.")
+        self.assertEqual(radios[0]["radio"]["text"], "Box, box. Questo giro.")
         self.assertEqual(alerts[0]["alert"]["message"], "Fuel low. Box this lap.")
         self.assertEqual(radios[0]["radio"]["timestamp"], alerts[0]["alert"]["timestamp"])
         alert_at = next(index for index, record in enumerate(records) if record["format"] == "raceengineer.alert")
@@ -128,9 +128,9 @@ class RulesTests(unittest.TestCase):
 
         with patch("raceengineer.demo.speak", side_effect=record):
             radios = self.run_cli(["--source", "synthetic", "--radio-only", "--speak"])
-        self.assertEqual([radio["radio"]["text"] for radio in radios], ["Benzina bassa. Boxa questo giro."])
-        self.assertEqual(spoken[0][0], "Benzina bassa. Boxa questo giro.")
-        self.assertIn("Benzina bassa. Boxa questo giro.", spoken[0][1])
+        self.assertEqual([radio["radio"]["text"] for radio in radios], ["Box, box. Questo giro."])
+        self.assertEqual(spoken[0][0], "Box, box. Questo giro.")
+        self.assertIn("Box, box. Questo giro.", spoken[0][1])
 
     def test_speak_without_radio_is_a_no_op(self):
         samples = [Sample(fuel=None, valid=True), Sample(fuel=9, valid=False), Sample(fuel=9)]
@@ -152,17 +152,17 @@ class RulesTests(unittest.TestCase):
             status = main(["--source", "synthetic", "--radio-only", "--speak"])
         self.assertEqual(status, 1)
         radio = json.loads(output.getvalue())
-        self.assertEqual(radio["radio"]["text"], "Benzina bassa. Boxa questo giro.")
+        self.assertEqual(radio["radio"]["text"], "Box, box. Questo giro.")
         self.assertIn("error: speech failed: sapi down", error.getvalue())
 
     def test_speak_invokes_windows_sapi_without_starting_it(self):
         with patch("raceengineer.demo.subprocess.run") as run:
             run.return_value = subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="")
-            speak("Benzina bassa. Boxa questo giro.")
+            speak("Box, box. Questo giro.")
         command = run.call_args.args[0]
         self.assertEqual(command[0], "powershell.exe")
         self.assertIn("System.Speech", command[-1])
-        self.assertEqual(run.call_args.kwargs["env"]["RACEENGINEER_RADIO_TEXT"], "Benzina bassa. Boxa questo giro.")
+        self.assertEqual(run.call_args.kwargs["env"]["RACEENGINEER_RADIO_TEXT"], "Box, box. Questo giro.")
 
 
 if __name__ == "__main__":

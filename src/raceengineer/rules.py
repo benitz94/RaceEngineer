@@ -9,7 +9,7 @@ from .model import Sample
 FUEL_LOW_THRESHOLD = 10.0
 FUEL_RESET_THRESHOLD = 12.0
 FUEL_LOW_MESSAGE = "Fuel low. Box this lap."
-FUEL_LOW_RADIO_TEXT = "Benzina bassa. Boxa questo giro."
+FUEL_LOW_RADIO_TEXT = "Box, box. Questo giro."
 
 
 @dataclass

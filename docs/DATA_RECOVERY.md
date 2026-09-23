@@ -56,7 +56,7 @@ from missing fields, lap changes, or out-of-order timestamps.
 
 A `fuel_low` alert also prints one radio line: `format: "raceengineer.radio"`,
 `version: 1`, and a `radio` object with `source: "rule"`, `type: "fuel_low"`,
-`text: "Benzina bassa. Boxa questo giro."`, and the same timestamp. The alert
+`text: "Box, box. Questo giro."`, and the same timestamp. The alert
 message stays the English log line. No language model is called. Missing or
 invalid fuel still produces neither an alert nor a radio line.
 

@@ -26,7 +26,7 @@ nullable sample model, repeatable synthetic source, versioned JSONL recording
 and file replay, text CLI output, an optional UDP metadata probe, and a
 deterministic low-fuel rule. A `fuel_low` alert also prints a versioned radio
 line (`raceengineer.radio` version 1, `source: rule`) whose driver text is
-"Benzina bassa. Boxa questo giro." The alert log message stays English.
+"Box, box. Questo giro." The alert log message stays English.
 `--speak` says the radio line with local Windows speech. That slice is not a
 substitute for choosing the models. It does not define the production
 hardware. Critical alerts stay in rules code; they are not delegated to
