@@ -13,9 +13,24 @@ Its goal is to receive telemetry from a simulator, analyze it using
 deterministic logic, and provide the driver with useful information during and
 after the session.
 
-The project is designed as a self-contained, reproducible platform running on
-a Linux machine. Optional local models are expected to need an AMD Radeon GPU
-with substantial VRAM.
+## Current blocker
+
+The intended platform cannot be started until two local models are chosen:
+
+1. the LLM;
+2. the Jev-like AI model that sits beside the race engineer for decision
+   support.
+
+Those two choices determine how much VRAM is required and therefore which GPU
+to buy. An AMD Radeon is the expected family. The exact card is unknown until
+the models are known.
+
+Without that knowledge the project cannot be sized, installed, or built for
+the intended Linux machine.
+
+If you want to help, start here: propose candidate models, their VRAM
+footprints, and whether both can run together on one AMD Radeon. Other feature
+work waits on this decision.
 
 ## Project Status
 
@@ -27,8 +42,8 @@ Gran Turismo 7 is the initial candidate simulator, but support for it is not
 yet a definitive requirement. The availability, format, stability, and terms
 of use of its telemetry must first be technically evaluated.
 
-The core will initially be developed, tested, and validated using synthetic or
-recorded telemetry, without requiring a connection to a real simulator.
+A small recovery slice already exists for offline experiments. It does not
+replace the model and hardware decision above.
 
 ## Initial Technology
 
@@ -77,19 +92,12 @@ The core must continue to operate without an Internet connection.
 Any online integrations must be optional and must not be required for core
 functionality.
 
-### No LLM in the Critical Path
+### Models and hardware first
 
-RaceEngineer does not require an LLM to analyze telemetry or make critical
-decisions during a race.
-
-An LLM may be added as an optional module for features such as:
-
-- natural rephrasing of messages;
-- post-session explanations;
-- conversation;
-- assisted data exploration.
-
-The absence or failure of the LLM must not prevent the core from operating.
+The LLM and the Jev-like companion model are not optional unknowns. They must
+be chosen before the target machine is specified. Critical race alerts may
+still be produced by deterministic rules, but the intended product includes
+those local models and cannot be built until their VRAM cost is known.
 
 ### Performance First
 
@@ -115,9 +123,9 @@ not introduce simulator-specific logic into the core.
 
 ### Hardware Independence
 
-The reference platform is a Linux machine, typically with an AMD Radeon GPU
-and substantial VRAM for optional local models. The architecture must not
-depend on a specific motherboard or GPU model.
+The reference platform is a Linux machine with an AMD Radeon GPU. The exact
+card depends on the VRAM required by the chosen models. The architecture must
+not hard-code a single SKU.
 
 The hardware may evolve based on real-world performance measurements and
 needs.
@@ -154,10 +162,12 @@ The first prototype will be a minimal local pipeline:
 7. when available, play the same alert through local TTS;
 8. record events, alerts, and diagnostic data.
 
+The intended platform still requires the LLM and Jev-like model decision
+before hardware is purchased and the full system is built.
+
 The prototype will not initially include:
 
 - speech recognition;
-- an LLM;
 - mandatory cloud services;
 - a complete dashboard;
 - advanced strategies;
@@ -167,10 +177,13 @@ The prototype will not initially include:
 
 ## Planned Initial Hardware
 
-Initial test bench:
+Do not buy a GPU yet.
+
+Initial test bench, after the models are chosen:
 
 - a Linux workstation or mini PC;
-- an AMD Radeon GPU with substantial VRAM, for optional local models;
+- an AMD Radeon GPU with enough VRAM for the LLM and the Jev-like model
+  together;
 - Ethernet or Wi-Fi connection;
 - USB lavalier microphone, not required for the first prototype;
 - local audio output (DAC, mixer, and headphones as needed).
@@ -178,7 +191,7 @@ Initial test bench:
 Raspberry Pi is not a target platform.
 
 Component models, alternatives, requirements, and configuration will be
-documented during development.
+documented after the models are selected.
 
 ## Documentation
 
