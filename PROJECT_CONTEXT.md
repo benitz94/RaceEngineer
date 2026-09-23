@@ -61,3 +61,4 @@ used for short speech, with a smaller decision head if it fits the same GPU.
 5. `AGENTS.md` — repository working rules.
 6. `docs/DATA_RECOVERY.md` — current demo and recording format.
 7. `docs/DECISION_MODEL.md` — planned typed decision model beside the LLM.
+8. `docs/RADIO_PHRASES.md` — pit-wall phrase book for language-model training.

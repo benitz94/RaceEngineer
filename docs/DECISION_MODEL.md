@@ -16,6 +16,8 @@ component.
 3. A **language model** may write a short briefing only after a declared skill
    has answered `brief` on a task where a briefing is allowed. Current
    evaluation candidate: `qwen3.5:4b`. It must stay disableable.
+   The phrase list in `docs/RADIO_PHRASES.md` is training material, not a
+   closed output set.
 
 The typed decision model sits beside the language model. It must not replace
 rules and it must not replace voice generation.
