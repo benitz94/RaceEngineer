@@ -34,6 +34,9 @@ choose:
 2. the Jev-like AI model that sits beside the race engineer for decision
    support.
 
+Both models must be free to obtain and run locally. Paid weights and paid
+cloud APIs are not acceptable.
+
 Those choices determine VRAM and the AMD Radeon card. Later roadmap phases
 that assume a target machine wait on this gate.
 
@@ -50,7 +53,7 @@ Activities:
 - define the process for documenting decisions;
 - define the minimum requirements for the first prototype;
 - define the initial Python project structure;
-- choose the LLM and the Jev-like companion model;
+- choose a free LLM and a free Jev-like companion model;
 - derive VRAM and AMD Radeon requirements from those models;
 - document the available hardware configuration after that choice.
 
@@ -62,7 +65,7 @@ Completion criteria:
   constraint;
 - the license has been selected (GPL-3.0-only, with CLA for inbound
   contributions);
-- the LLM and Jev-like model are named, with VRAM notes;
+- the free LLM and free Jev-like model are named, with VRAM notes;
 - the initial development environment has been defined;
 - no library is mandatory without documented rationale.
 
@@ -254,8 +257,8 @@ These items represent future possibilities, not already approved requirements.
 
 The following must be decided before the intended platform can be built:
 
-- the local LLM;
-- the Jev-like companion model for race-engineer decision support;
+- the free local LLM;
+- the free Jev-like companion model for race-engineer decision support;
 - VRAM required to run both models together;
 - the AMD Radeon card that meets that VRAM need;
 - Python runtime environment;
