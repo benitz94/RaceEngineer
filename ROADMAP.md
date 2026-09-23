@@ -25,6 +25,18 @@ Throughout all phases, the priorities are:
 
 Responsiveness must not be sacrificed for nonessential features.
 
+## Gate — Local models and GPU VRAM
+
+Before the intended Linux platform can be specified or built, the project must
+choose:
+
+1. the local LLM;
+2. the Jev-like AI model that sits beside the race engineer for decision
+   support.
+
+Those choices determine VRAM and the AMD Radeon card. Later roadmap phases
+that assume a target machine wait on this gate.
+
 ## Phase 0 — Project Documentation and Foundations
 
 Goal: make the scope, constraints, and decision criteria explicit before
@@ -38,9 +50,9 @@ Activities:
 - define the process for documenting decisions;
 - define the minimum requirements for the first prototype;
 - define the initial Python project structure;
-- select initial libraries only after verifying their compatibility with Linux
-  and, where relevant, AMD Radeon drivers;
-- document the available hardware configuration.
+- choose the LLM and the Jev-like companion model;
+- derive VRAM and AMD Radeon requirements from those models;
+- document the available hardware configuration after that choice.
 
 Completion criteria:
 
@@ -50,6 +62,7 @@ Completion criteria:
   constraint;
 - the license has been selected (GPL-3.0-only, with CLA for inbound
   contributions);
+- the LLM and Jev-like model are named, with VRAM notes;
 - the initial development environment has been defined;
 - no library is mandatory without documented rationale.
 
@@ -71,7 +84,7 @@ Activities:
 Completion criteria:
 
 - the same scenario always produces the same result;
-- the core operates without Internet access and without an LLM;
+- the core operates without Internet access;
 - missing or invalid data does not cause fabricated decisions;
 - events can be verified automatically;
 - the pipeline contains no dependencies on a specific simulator.
@@ -122,6 +135,8 @@ Completion criteria:
 
 Goal: verify self-contained, continuous core operation on the reference Linux
 hardware before integrating a real simulator.
+
+This phase assumes the model and GPU decision from the gate above.
 
 Validation will use synthetic and recorded telemetry.
 
@@ -229,7 +244,7 @@ Possible directions:
 - speech recognition;
 - web dashboard or application;
 - support for other simulators;
-- optional local or remote LLM;
+- optional remote LLM;
 - distribution through a ready-to-use image or installer;
 - support for additional Linux workstations and mini PCs.
 
@@ -237,8 +252,12 @@ These items represent future possibilities, not already approved requirements.
 
 ## Decisions Still Required
 
-The following must be decided before or during the initial phases:
+The following must be decided before the intended platform can be built:
 
+- the local LLM;
+- the Jev-like companion model for race-engineer decision support;
+- VRAM required to run both models together;
+- the AMD Radeon card that meets that VRAM need;
 - Python runtime environment;
 - initial operating system;
 - initial project structure;
