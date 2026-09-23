@@ -11,6 +11,9 @@ models are chosen:
 2. the Jev-like AI model that sits beside the race engineer for decision
    support.
 
+Both models must be free to obtain and run locally. Paid weights and paid
+cloud APIs are not acceptable.
+
 Those choices determine VRAM and therefore the GPU. An AMD Radeon is the
 expected family; the exact card cannot be selected yet. Without that
 knowledge the target machine cannot be specified, installed, or built.
@@ -36,9 +39,9 @@ protocol adapter is implemented.
 
 ## Next Objective
 
-Choose the LLM and the Jev-like companion model, document their VRAM needs,
-and from that select the AMD Radeon card. Contributors should help with that
-selection before proposing unrelated feature work.
+Choose a free local LLM and a free Jev-like companion model, document their
+VRAM needs, and from that select the AMD Radeon card. Contributors should help
+with that selection before proposing unrelated feature work.
 
 ## Essential Files
 
