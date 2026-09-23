@@ -17,12 +17,15 @@ The project is blocked until these are chosen:
 2. the Jev-like AI model that sits beside the race engineer for
    decision support.
 
+Both models must be free to obtain and run locally. Paid weights and
+paid cloud APIs are not acceptable.
+
 Those choices set VRAM and the AMD Radeon card. The intended Linux
 machine cannot be specified or built before that.
 
-Helpful contributions right now are model proposals with VRAM figures
-and whether both models can run on one GPU. Unrelated feature work
-should wait.
+Helpful contributions right now are free model proposals with VRAM
+figures and whether both models can run on one GPU. Unrelated feature
+work should wait.
 
 ## License
 
