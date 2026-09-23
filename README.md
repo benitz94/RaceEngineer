@@ -17,12 +17,13 @@ after the session.
 
 The intended platform cannot be started until two local models are chosen:
 
-1. the LLM;
-2. the Jev-like AI model that sits beside the race engineer for decision
-   support.
+1. the language model that writes short radio briefings;
+2. the typed decision model that sits beside that language model and answers
+   only bounded questions (speak or hold, canned text or briefing, grounded or
+   reject).
 
 Both models must be free to obtain and run locally. Paid weights and paid
-cloud APIs are not acceptable.
+cloud APIs are not acceptable. See `docs/DECISION_MODEL.md`.
 
 Those two choices determine how much VRAM is required and therefore which GPU
 to buy. An AMD Radeon is the expected family. The exact card is unknown until
@@ -97,11 +98,11 @@ functionality.
 
 ### Models and hardware first
 
-The LLM and the Jev-like companion model are not optional unknowns. They must
-be free, local, and chosen before the target machine is specified. Critical
-race alerts may still be produced by deterministic rules, but the intended
-product includes those local models and cannot be built until their VRAM cost
-is known.
+The language model and the typed decision model are not optional unknowns.
+They must be free, local, and chosen before the target machine is specified.
+Critical race alerts may still be produced by deterministic rules, but the
+intended product includes those local models and cannot be built until their
+VRAM cost is known.
 
 ### Performance First
 
@@ -166,8 +167,8 @@ The first prototype will be a minimal local pipeline:
 7. when available, play the same alert through local TTS;
 8. record events, alerts, and diagnostic data.
 
-The intended platform still requires the free LLM and free Jev-like model
-decision before hardware is purchased and the full system is built.
+The intended platform still requires the free language model and free typed
+decision model before hardware is purchased and the full system is built.
 
 The prototype will not initially include:
 
@@ -186,8 +187,8 @@ Do not buy a GPU yet.
 Initial test bench, after the models are chosen:
 
 - a Linux workstation or mini PC;
-- an AMD Radeon GPU with enough VRAM for the LLM and the Jev-like model
-  together;
+- an AMD Radeon GPU with enough VRAM for the language model and the typed
+  decision model together;
 - Ethernet or Wi-Fi connection;
 - USB lavalier microphone, not required for the first prototype;
 - local audio output (DAC, mixer, and headphones as needed).
@@ -202,7 +203,9 @@ documented after the models are selected.
 - `PROJECT_JOURNAL.md`: origins, intentions, and decision rationale;
 - `ARCHITECTURE.md`: system components, boundaries, and flows;
 - `ROADMAP.md`: development phases and completion criteria;
-- `AGENTS.md`: operating rules for repository contributors.
+- `AGENTS.md`: operating rules for repository contributors;
+- `docs/DECISION_MODEL.md`: planned typed decision model beside the LLM;
+- `docs/DATA_RECOVERY.md`: current demo and recording format.
 
 `PROJECT_JOURNAL.md` is the primary source for the project's intent and
 decision history.
