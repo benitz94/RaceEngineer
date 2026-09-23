@@ -1,12 +1,18 @@
 # Project Context
 
-Last updated: 2026-09-13
+Last updated: 2026-09-23
 
 ## Current State
 
 RaceEngineer has its first simulator-independent data-recovery slice in Python:
 a nullable sample model, repeatable synthetic source, versioned JSONL recording
 and file replay, text CLI output, and an optional UDP metadata probe.
+
+File replay is driven by `ReplayController` with start, pause, resume, stop,
+and playback speed. An injectable `Clock` (`MonotonicClock` / `VirtualClock`)
+scales waits from recorded timestamps without rewriting sample times.
+Synthetic generation still uses `--rate`; recorded playback uses
+`--replay-speed`. They are separate controls.
 
 A deterministic rules engine tracks the last valid fuel and lap and suppresses
 repeated low-fuel alerts. Valid fuel at or below the configurable 10.0-litre
@@ -33,7 +39,8 @@ development PC without a simulator. No simulator protocol adapter is implemented
 ## Next Objective
 
 Select the next bounded slice with the project owner. Broader session lifecycle
-handling, additional rules, alert delivery, and replay controls remain pending.
+handling, additional rules, alert delivery, and interactive replay controls
+remain pending.
 
 ## Essential Files
 

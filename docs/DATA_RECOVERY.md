@@ -17,7 +17,9 @@ use `python -m raceengineer.demo --source synthetic --samples-only | Set-Content
 recording.jsonl` to capture UTF-8 instead of its default UTF-16 redirection.
 
 Synthetic output defaults to 20 samples at 10 Hz. `--count` changes its length;
-`--rate` controls synthetic and file delivery. Replay runs to end of file.
+`--rate` controls synthetic generation and delivery only. File replay uses
+`--replay-speed` (default 1.0) to scale waits between recorded timestamps
+without rewriting those timestamps. Replay runs to end of file.
 Ctrl+C stops replay or UDP. UDP optionally stops after `--count` datagrams;
 `--host` selects the bind address.
 
@@ -55,7 +57,10 @@ from missing fields, lap changes, or out-of-order timestamps.
 
 Each UTF-8 JSONL line contains `format: "raceengineer.sample"`, `version: 1`,
 and a `sample` object. Replay preserves file order, duplicates, timestamps,
-and invalid samples. Delivery uses `--rate`, without replacing timestamps.
+and invalid samples. File delivery uses recorded source timestamps (falling back to receipt
+time) and `--replay-speed`. A recorded 2.0 s gap waits 2.0 s at 1x and 0.2 s
+at 10x. Missing or non-increasing timestamps emit without waiting. Sample
+fields are not rewritten.
 Malformed records, unsupported versions, unknown sample fields, and wrong types
 fail with a line-number diagnostic and a nonzero exit code.
 
