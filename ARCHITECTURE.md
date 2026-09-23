@@ -17,7 +17,7 @@ The project's initial language is Python.
 Python was selected for:
 
 - rapid development;
-- Raspberry Pi compatibility;
+- Linux compatibility;
 - integration with AI, Ollama, STT, and TTS;
 - availability of a broad library ecosystem.
 
@@ -36,7 +36,7 @@ The architecture must ensure:
 
 - local operation without mandatory cloud services;
 - independence from the development PC;
-- initial execution on a Raspberry Pi 3B+;
+- execution on a Linux machine with an AMD Radeon GPU when local models are used;
 - core development and validation without a connected simulator;
 - separation between simulators and core logic;
 - deterministic behavior for critical decisions;
@@ -52,7 +52,7 @@ The architecture must ensure:
 ### Performance First
 
 Every component and new feature must also be evaluated against the resources
-available on the reference hardware.
+available on the reference Linux hardware.
 
 The system priorities, in order, are:
 
@@ -158,7 +158,7 @@ be implemented only after:
 2. validation with synthetic telemetry;
 3. validation with recorded telemetry;
 4. verification of local voice output;
-5. complete core validation on the Raspberry Pi 3B+;
+5. complete core validation on the reference Linux machine;
 6. a simulator-specific technical evaluation.
 
 Each simulator must have a separate adapter.
@@ -297,9 +297,9 @@ Examples:
 
 ## Performance
 
-The Raspberry Pi 3B+ is the initial test bench.
+A Linux machine with an AMD Radeon GPU is the initial test bench.
 
-Complete core validation on the Raspberry Pi 3B+ must occur before selecting
+Core validation on the reference Linux machine must occur before selecting
 and implementing the adapter for the first real simulator.
 
 Validation will use synthetic and recorded telemetry and must measure:
@@ -331,11 +331,11 @@ Before declaring support for Gran Turismo 7, the following must be evaluated:
 - session, lap, and car identification;
 - any required transformations or decoding;
 - stability across game updates;
-- Raspberry Pi 3B+ compatibility;
+- Linux and AMD Radeon compatibility for optional local models;
 - licensing, distribution, and documentation considerations.
 
 This evaluation will take place after complete core validation on the
-Raspberry Pi 3B+.
+reference Linux machine.
 
 The outcome must be documented before GT7 becomes a definitive requirement.
 
