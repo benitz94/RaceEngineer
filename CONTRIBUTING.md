@@ -2,8 +2,8 @@
 
 Thank you for your interest in RaceEngineer.
 
-Read `README.md`, `ARCHITECTURE.md`, `ROADMAP.md`, and `AGENTS.md`
-before opening a pull request.
+Read `README.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `AGENTS.md`, and
+`docs/DECISION_MODEL.md` before opening a pull request.
 
 The official repository language is English. Discussion with the
 maintainer may be in Italian. Files committed to the repository must be
@@ -13,9 +13,10 @@ in English.
 
 The project is blocked until these are chosen:
 
-1. the local LLM;
-2. the Jev-like AI model that sits beside the race engineer for
-   decision support.
+1. the local language model that writes short radio briefings;
+2. the local typed decision model that sits beside it and answers only
+   bounded questions (speak or hold, canned text or briefing, grounded
+   or reject).
 
 Both models must be free to obtain and run locally. Paid weights and
 paid cloud APIs are not acceptable.
