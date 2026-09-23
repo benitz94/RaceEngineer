@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-09-13
+Last updated: 2026-09-23
 
 ## Current State
 
@@ -26,9 +26,10 @@ The public repository is `benitz94/RaceEngineer`. English is the official
 repository language. The public license is GPL-3.0-only; external contributions
 require the existing CLA.
 
-This slice does not target Raspberry Pi. Hardware references in older design
-documents are historical. Development and offline validation occur on the
-development PC without a simulator. No simulator protocol adapter is implemented.
+The reference runtime is a Linux machine. Optional local models are expected
+to need an AMD Radeon GPU with substantial VRAM. Raspberry Pi is not a target.
+Development and offline validation occur without a simulator. No simulator
+protocol adapter is implemented.
 
 ## Next Objective
 
