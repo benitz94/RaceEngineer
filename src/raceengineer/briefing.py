@@ -5,6 +5,7 @@ involved, and a failed request must not replace the rule radio.
 """
 
 import json
+import re
 import urllib.error
 import urllib.request
 
@@ -12,15 +13,45 @@ CHAT_URL = "http://127.0.0.1:11434/api/chat"
 MODEL = "qwen3.5:4b"
 TIMEOUT_SECONDS = 15
 SYSTEM_PROMPT = (
-    "You are a pit-wall engineer. Speak Italian. Two sentences maximum. "
-    "docs/RADIO_PHRASES.md is register training, not a whitelist. "
-    "Do not invent corners, sectors, rivals, or numbers that are not in the JSON. "
-    "Ground the briefing in the alert fields actually passed: type, fuel, and timestamp."
+    "You are a pit-wall engineer. Speak Italian. At most two short sentences. "
+    "docs/RADIO_PHRASES.md is register training, not a script and not a whitelist. "
+    "Give one driver action and, when fuel is present, say that fuel as spoken Italian words "
+    "(for example dieci litri). Do not say digits or field names. "
+    "Never say the JSON key names type, timestamp, source, format, or version. "
+    "Never say a raw timestamp such as 1.5. "
+    "Do not speak English except the standard call Box, box. "
+    "Do not say alert, procedura, or conferma il segnale. "
+    "Do not invent corners, sectors, or rivals. "
+    "The JSON is context for you. Do not read it aloud."
 )
+_WORD = re.compile(r"[^\W\d_]+", re.UNICODE)
+_SENTENCE_END = re.compile(r"[.!?]+")
+_LOG_CHARS = set("{}[]=\"`")
+_BANNED_PHRASES = ("conferma il segnale", "confirm the signal")
+_FORBIDDEN_WORDS = frozenset({
+    "type", "timestamp", "source", "format", "version",
+    "alert", "procedura",
+    "corner", "corners", "sector", "sectors", "rival", "rivals",
+    "curva", "curve", "settore", "settori", "rivale", "rivali", "turn", "turns",
+    "fuel", "low", "lap", "the", "this", "that", "with", "from", "your", "you",
+    "please", "confirm", "signal", "procedure", "now", "high", "priority",
+    "message", "litres", "liters", "liter", "seconds", "second", "time", "value",
+    "field", "null", "warning", "status", "level", "data", "json", "key", "keys",
+    "number", "copy", "true", "false", "yes", "ok", "okay", "point",
+})
+_MAX_SENTENCES = 2
+_MAX_WORDS = 12
 
 
 class BriefingUnavailable(Exception):
     """Ollama is down, timed out, or returned nothing usable."""
+
+
+class BriefRejected(BriefingUnavailable):
+    """The model replied with a log line instead of a pit-wall call."""
+
+    def __init__(self):
+        super().__init__("brief rejected")
 
 
 def _one_line(value, limit=300) -> str:
@@ -92,6 +123,32 @@ def _chat(user, opener, timeout) -> bytes:
     return _post(_payload(user, include_think=False), opener, timeout)
 
 
+def _unwrap(text: str) -> str:
+    cleaned = " ".join(text.split())
+    while len(cleaned) >= 2 and cleaned[0] == cleaned[-1] and cleaned[0] in "\"'`*":
+        cleaned = cleaned[1:-1].strip()
+    return cleaned
+
+
+def _accept_radio_text(text: str) -> str:
+    """Keep a short Italian pit call. Reject logs, field names, and invented facts."""
+    cleaned = _unwrap(text)
+    if not cleaned:
+        raise BriefingUnavailable("empty response")
+    lowered = cleaned.lower()
+    if any(phrase in lowered for phrase in _BANNED_PHRASES):
+        raise BriefRejected()
+    if any(char.isdigit() for char in cleaned) or any(char in cleaned for char in _LOG_CHARS):
+        raise BriefRejected()
+    sentences = [part.strip() for part in _SENTENCE_END.split(cleaned) if part.strip()]
+    if len(sentences) > _MAX_SENTENCES or any(len(part.split()) > _MAX_WORDS for part in sentences):
+        raise BriefRejected()
+    words = {word.lower() for word in _WORD.findall(cleaned)}
+    if words & _FORBIDDEN_WORDS:
+        raise BriefRejected()
+    return cleaned
+
+
 def _sentence(raw: bytes) -> str:
     try:
         body = json.loads(raw.decode("utf-8"))
@@ -116,7 +173,8 @@ def brief_alert(alert, opener=None, timeout=TIMEOUT_SECONDS) -> str:
     """Return the model sentence for a fuel_low alert.
 
     Raises BriefingUnavailable when Ollama is down, times out, or returns
-    an empty sentence. The rule radio stays the caller's responsibility.
+    an empty sentence. Raises BriefRejected when the sentence is log-like.
+    The rule radio stays the caller's responsibility.
     """
     if opener is None:
         opener = urllib.request.urlopen
@@ -135,4 +193,4 @@ def brief_alert(alert, opener=None, timeout=TIMEOUT_SECONDS) -> str:
         raise BriefingUnavailable(_http_failure(error.code, _error_detail(error))) from error
     except OSError as error:
         raise _unavailable(error) from error
-    return _sentence(raw)
+    return _accept_radio_text(_sentence(raw))

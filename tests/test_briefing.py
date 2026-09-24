@@ -15,7 +15,7 @@ from raceengineer.recording import encode
 from raceengineer.rules import Alert
 
 
-SENTENCE = "Benzina a 10 litri. Box questo giro."
+SENTENCE = "Benzina a dieci litri. Box questo giro."
 
 
 class _Response:
@@ -56,10 +56,14 @@ class BriefingTests(unittest.TestCase):
 
     def test_prompt_limits_the_model_to_passed_alert_fields(self):
         self.assertIn("pit-wall engineer", SYSTEM_PROMPT)
-        self.assertIn("Speak Italian. Two sentences maximum.", SYSTEM_PROMPT)
-        self.assertIn("docs/RADIO_PHRASES.md is register training, not a whitelist.", SYSTEM_PROMPT)
-        self.assertIn("Do not invent corners, sectors, rivals, or numbers that are not in the JSON.", SYSTEM_PROMPT)
-        self.assertIn("type, fuel, and timestamp", SYSTEM_PROMPT)
+        self.assertIn("Speak Italian. At most two short sentences.", SYSTEM_PROMPT)
+        self.assertIn("docs/RADIO_PHRASES.md is register training, not a script and not a whitelist.", SYSTEM_PROMPT)
+        self.assertIn("dieci litri", SYSTEM_PROMPT)
+        self.assertIn("Never say the JSON key names type, timestamp, source, format, or version.", SYSTEM_PROMPT)
+        self.assertIn("Never say a raw timestamp such as 1.5.", SYSTEM_PROMPT)
+        self.assertIn("Do not speak English except the standard call Box, box.", SYSTEM_PROMPT)
+        self.assertIn("Do not say alert, procedura, or conferma il segnale.", SYSTEM_PROMPT)
+        self.assertIn("Do not invent corners, sectors, or rivals.", SYSTEM_PROMPT)
         captured = {}
 
         def opener(request, timeout):
@@ -303,6 +307,28 @@ class BriefingTests(unittest.TestCase):
         self.assertEqual(radios[0]["radio"]["text"], "Box, box. Questo giro.")
         self.assertIn("error: speech failed: sapi down", error.getvalue())
         self.assertNotIn("briefing unavailable", error.getvalue())
+
+    def test_log_like_brief_is_rejected_and_rule_radio_stays(self):
+        def opener(request, timeout):
+            return _Response({
+                "message": {
+                    "content": "alert type fuel_low timestamp 1.5. Conferma il segnale sul sector 3.",
+                },
+            })
+
+        output = io.StringIO()
+        error = io.StringIO()
+        with patch("urllib.request.urlopen", side_effect=opener), \
+             patch("socket.create_connection", side_effect=OSError("blocked")), \
+             contextlib.redirect_stdout(output), contextlib.redirect_stderr(error), \
+             patch("raceengineer.demo.paced", side_effect=lambda samples, rate: samples):
+            status = main(["--source", "synthetic", "--radio-only", "--brief"])
+        self.assertEqual(status, 0)
+        radios = [json.loads(line) for line in output.getvalue().splitlines()]
+        self.assertEqual(len(radios), 1)
+        self.assertEqual(radios[0]["radio"]["source"], "rule")
+        self.assertEqual(radios[0]["radio"]["text"], "Box, box. Questo giro.")
+        self.assertEqual(error.getvalue().splitlines(), ["error: brief rejected"])
 
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ import json
 import os
 import subprocess
 import sys
-from .briefing import BriefingUnavailable, brief_alert
+from .briefing import BriefRejected, BriefingUnavailable, brief_alert
 from .recording import encode
 from .rules import FUEL_LOW_THRESHOLD, Radio, RulesEngine, rule_radio
 from .sources import paced, replay, synthetic, validate_rate
@@ -105,6 +105,8 @@ def main(argv=None):
                 if args.brief and alert.type == "fuel_low":
                     try:
                         sentence = brief_alert(alert)
+                    except BriefRejected:
+                        print("error: brief rejected", file=sys.stderr)
                     except BriefingUnavailable as error:
                         print(f"error: briefing unavailable: {error}", file=sys.stderr)
                     else:

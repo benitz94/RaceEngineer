@@ -30,7 +30,8 @@ line (`raceengineer.radio` version 1, `source: rule`) whose driver text is
 `--speak` says that rule line with local Windows speech. `--brief` asks local
 Ollama (`qwen3.5:4b`) for a second radio line (`source: llm`) after the rule
 line and does not replace it. If Ollama is down, times out, or returns empty,
-the process continues and stderr gets one line. The typed decision model is
+the process continues and stderr gets one line. A log-like reply is dropped
+and stderr says brief rejected. The typed decision model is
 not implemented. That slice is not a substitute for choosing the models. It
 does not define the production hardware. Critical alerts stay in rules code;
 they are not delegated to either model.

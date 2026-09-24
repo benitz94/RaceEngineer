@@ -65,6 +65,8 @@ radio line, local Ollama model `qwen3.5:4b` (`http://127.0.0.1:11434/api/chat`,
 about 15 seconds) may print a second `raceengineer.radio` line (`source: "llm"`,
 same type and timestamp). If Ollama is down, times out, or returns empty,
 nothing extra is printed, stderr gets one line, and the process does not fail.
+A reply that names fields, timestamps, or other log wording is dropped, and
+stderr says `brief rejected`. The rule radio stays.
 
 `--speak` says the rule radio text with local Windows speech (System.Speech).
 It uses an installed Italian voice when one is present. If speech fails, the
