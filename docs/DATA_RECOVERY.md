@@ -90,7 +90,15 @@ curl.exe -L --fail -o "$dest\it_IT-paola-medium.onnx.json" "https://huggingface.
 If Paola is unavailable, the same two steps with Riccardo from
 `https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/riccardo/x_low/it_IT-riccardo-x_low.onnx`
 and its `.onnx.json`. Skip the download when `piper.exe` and an `it_IT` model
-are already in that folder.
+are already in that folder. Riccardo has no medium file in that set; use
+`it_IT-riccardo-x_low.onnx` and its `.onnx.json` from
+`https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/riccardo/x_low/`.
+
+`--voice paola` or `--voice riccardo` selects which installed Piper file speaks.
+That flag is a Voice Profile stand-in: it changes only the sound of the radio.
+Engineer Profiles, which would carry attitude and verbosity, are a separate
+layer and are not implemented in this slice. See `PROJECT_JOURNAL.md`,
+Engineer Profiles and Voice Profiles.
 
 ## Version 1 Recording
 

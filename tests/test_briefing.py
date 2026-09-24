@@ -287,7 +287,7 @@ class BriefingTests(unittest.TestCase):
     def test_speak_with_brief_speaks_rule_then_llm(self):
         spoken = []
 
-        def record(text):
+        def record(text, voice="paola"):
             spoken.append((text, sys.stdout.getvalue()))
 
         def opener(request, timeout):
@@ -366,7 +366,7 @@ class BriefingTests(unittest.TestCase):
         def opener(request, timeout):
             return _Response({"message": {"content": "alert type fuel_low timestamp 1.5"}})
 
-        with patch("raceengineer.demo.speak", side_effect=spoken.append), \
+        with patch("raceengineer.demo.speak", side_effect=lambda text, voice="paola": spoken.append(text)), \
              patch("urllib.request.urlopen", side_effect=opener), \
              patch("socket.create_connection", side_effect=OSError("blocked")):
             radios, stderr = self.run_cli(["--source", "synthetic", "--radio-only", "--speak", "--brief"])

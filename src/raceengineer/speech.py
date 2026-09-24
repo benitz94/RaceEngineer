@@ -68,23 +68,19 @@ def _config_for(model: Path) -> Path:
     return Path(str(model) + ".json")
 
 
-def _italian_rank(model: Path) -> int | None:
+def _voice_rank(model: Path, voice: str) -> int | None:
     name = model.name.lower()
-    if "it_it" not in name:
+    if "it_it" not in name or voice not in name:
         return None
     if not _config_for(model).is_file():
         return None
-    if "paola" in name and "medium" in name:
+    if "medium" in name:
         return 0
-    if "paola" in name:
-        return 1
-    if "riccardo" in name:
-        return 2
-    return 3
+    return 1
 
 
-def find_italian_model() -> Path | None:
-    """Prefer Paola medium, then any other it_IT Piper voice with its json config."""
+def find_italian_model(voice: str = "paola") -> Path | None:
+    """Return the installed it_IT Piper model for paola or riccardo."""
     found = []
     seen = set()
     roots = list(_search_roots())
@@ -99,7 +95,7 @@ def find_italian_model() -> Path | None:
             if key in seen:
                 continue
             seen.add(key)
-            rank = _italian_rank(model)
+            rank = _voice_rank(model, voice)
             if rank is not None:
                 found.append((rank, model))
     if not found:
@@ -139,10 +135,10 @@ def _play_wav(path: Path) -> None:
     _run_powershell(_PLAY_SCRIPT, env)
 
 
-def _try_piper(text: str) -> bool:
-    """Synthesize with the local Italian model. False when Piper or the model is missing."""
+def _try_piper(text: str, voice: str) -> bool:
+    """Synthesize with the selected Italian model. False when Piper or that model is missing."""
     binary = find_piper()
-    model = find_italian_model()
+    model = find_italian_model(voice)
     if binary is None or model is None:
         return False
     handle = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
@@ -178,10 +174,10 @@ def _try_piper(text: str) -> bool:
     return True
 
 
-def speak(text: str) -> None:
-    """Speak one radio line with Piper Italian, or Windows SAPI when Piper is missing."""
+def speak(text: str, voice: str = "paola") -> None:
+    """Speak one radio line with the selected Piper voice, or Windows SAPI when it is missing."""
     global _NOTICE_SENT
-    if _try_piper(text):
+    if _try_piper(text, voice):
         return
     if not _NOTICE_SENT:
         print(PIPER_NOTICE, file=sys.stderr)

@@ -123,7 +123,7 @@ class RulesTests(unittest.TestCase):
     def test_speak_uses_italian_radio_text_without_audio(self):
         spoken = []
 
-        def record(text):
+        def record(text, voice="paola"):
             spoken.append((text, sys.stdout.getvalue()))
 
         with patch("raceengineer.demo.speak", side_effect=record):

@@ -12,10 +12,10 @@ from .speech import speak
 from .udp_probe import probe
 
 
-def _speak_printed(text: str) -> bool:
+def _speak_printed(text: str, voice: str) -> bool:
     """Speak one printed radio line. Return True when speech fails."""
     try:
-        speak(text)
+        speak(text, voice)
     except RuntimeError as error:
         print(f"error: speech failed: {error}", file=sys.stderr)
         return True
@@ -35,6 +35,7 @@ def main(argv=None):
     output.add_argument("--samples-only", action="store_true", help="print replayable sample recordings only")
     output.add_argument("--radio-only", action="store_true", help="print radio lines only")
     parser.add_argument("--speak", action="store_true", help="speak radio lines with local Piper Italian, or Windows speech")
+    parser.add_argument("--voice", choices=("paola", "riccardo"), default="paola", help="Piper Italian voice")
     parser.add_argument("--brief", action="store_true", help="ask local Ollama for a briefing after a rule radio line")
     parser.add_argument("--fuel-low-threshold", type=float, default=FUEL_LOW_THRESHOLD)
     args = parser.parse_args(argv)
@@ -71,7 +72,7 @@ def main(argv=None):
                     continue
                 radio = rule_radio(alert)
                 print(radio.encode(), flush=True)
-                if args.speak and _speak_printed(radio.text):
+                if args.speak and _speak_printed(radio.text, args.voice):
                     speech_failed = True
                 if alert.type != "fuel_low":
                     continue
@@ -103,7 +104,7 @@ def main(argv=None):
                 if aired:
                     llm = Radio("llm", radio.type, aired, radio.timestamp)
                     print(llm.encode(), flush=True)
-                    if args.speak and _speak_printed(llm.text):
+                    if args.speak and _speak_printed(llm.text, args.voice):
                         speech_failed = True
             if speech_failed:
                 return 1
