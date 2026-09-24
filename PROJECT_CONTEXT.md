@@ -27,7 +27,8 @@ and file replay, text CLI output, an optional UDP metadata probe, and a
 deterministic low-fuel rule. A `fuel_low` alert also prints a versioned radio
 line (`raceengineer.radio` version 1, `source: rule`) whose driver text is
 "Box, box. Questo giro." The alert log message stays English.
-`--speak` says that rule line with local Windows speech. A deterministic gate
+`--speak` says each printed radio line with local Windows speech, rule line
+first and the llm line when one is printed. A deterministic gate
 in `src/raceengineer/decision.py` answers `canned_or_brief` and
 `grounded_or_reject`. It is code, not a neural decision model. `--brief` is
 the declared brief skill. When the gate answers `brief`, local Ollama

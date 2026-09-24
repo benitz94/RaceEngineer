@@ -271,7 +271,7 @@ class BriefingTests(unittest.TestCase):
             {"fuel": 9, "timestamp": 4, "type": "fuel_low"},
         ])
 
-    def test_speak_with_brief_speaks_the_rule_line_only(self):
+    def test_speak_with_brief_speaks_rule_then_llm(self):
         spoken = []
 
         def record(text):
@@ -285,9 +285,10 @@ class BriefingTests(unittest.TestCase):
              patch("socket.create_connection", side_effect=OSError("blocked")):
             radios, stderr = self.run_cli(["--source", "synthetic", "--radio-only", "--speak", "--brief"])
         self.assertEqual(stderr, "")
-        self.assertEqual([text for text, _stdout in spoken], ["Box, box. Questo giro."])
+        self.assertEqual([text for text, _stdout in spoken], ["Box, box. Questo giro.", SENTENCE])
         self.assertIn("Box, box. Questo giro.", spoken[0][1])
         self.assertNotIn(SENTENCE, spoken[0][1])
+        self.assertIn(SENTENCE, spoken[1][1])
         self.assertEqual([radio["radio"]["source"] for radio in radios], ["rule", "llm"])
 
     def test_speech_failure_still_returns_one_when_a_briefing_is_printed(self):
@@ -305,8 +306,26 @@ class BriefingTests(unittest.TestCase):
         radios = [json.loads(line) for line in output.getvalue().splitlines()]
         self.assertEqual([radio["radio"]["source"] for radio in radios], ["rule", "llm"])
         self.assertEqual(radios[0]["radio"]["text"], "Box, box. Questo giro.")
-        self.assertIn("error: speech failed: sapi down", error.getvalue())
+        self.assertEqual(radios[1]["radio"]["text"], SENTENCE)
+        self.assertEqual(error.getvalue().splitlines(), [
+            "error: speech failed: sapi down",
+            "error: speech failed: sapi down",
+        ])
         self.assertNotIn("briefing unavailable", error.getvalue())
+
+    def test_speak_does_not_say_a_rejected_brief(self):
+        spoken = []
+
+        def opener(request, timeout):
+            return _Response({"message": {"content": "alert type fuel_low timestamp 1.5"}})
+
+        with patch("raceengineer.demo.speak", side_effect=spoken.append), \
+             patch("urllib.request.urlopen", side_effect=opener), \
+             patch("socket.create_connection", side_effect=OSError("blocked")):
+            radios, stderr = self.run_cli(["--source", "synthetic", "--radio-only", "--speak", "--brief"])
+        self.assertEqual(spoken, ["Box, box. Questo giro."])
+        self.assertEqual([radio["radio"]["source"] for radio in radios], ["rule"])
+        self.assertIn("brief rejected", stderr)
 
     def test_log_like_brief_is_rejected_and_rule_radio_stays(self):
         def opener(request, timeout):

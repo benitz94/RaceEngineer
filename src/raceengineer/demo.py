@@ -48,6 +48,16 @@ def speak(text: str) -> None:
         raise RuntimeError(detail)
 
 
+def _speak_printed(text: str) -> bool:
+    """Speak one printed radio line. Return True when speech fails."""
+    try:
+        speak(text)
+    except RuntimeError as error:
+        print(f"error: speech failed: {error}", file=sys.stderr)
+        return True
+    return False
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", choices=("synthetic", "file", "udp"), required=True)
@@ -97,12 +107,8 @@ def main(argv=None):
                     continue
                 radio = rule_radio(alert)
                 print(radio.encode(), flush=True)
-                if args.speak:
-                    try:
-                        speak(radio.text)
-                    except RuntimeError as error:
-                        speech_failed = True
-                        print(f"error: speech failed: {error}", file=sys.stderr)
+                if args.speak and _speak_printed(radio.text):
+                    speech_failed = True
                 if alert.type != "fuel_low":
                     continue
                 if answer("canned_or_brief", {"brief": args.brief}) != "brief":
@@ -120,7 +126,10 @@ def main(argv=None):
                 except BriefRejected:
                     print("error: brief rejected", file=sys.stderr)
                 else:
-                    print(Radio("llm", radio.type, sentence, radio.timestamp).encode(), flush=True)
+                    llm = Radio("llm", radio.type, sentence, radio.timestamp)
+                    print(llm.encode(), flush=True)
+                    if args.speak and _speak_printed(llm.text):
+                        speech_failed = True
             if speech_failed:
                 return 1
     except (ValueError, OSError) as error:

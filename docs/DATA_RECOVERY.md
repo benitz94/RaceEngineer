@@ -68,10 +68,11 @@ nothing extra is printed, stderr gets one line, and the process does not fail.
 A reply that names fields, timestamps, or other log wording is dropped, and
 stderr says `brief rejected`. The rule radio stays.
 
-`--speak` says the rule radio text with local Windows speech (System.Speech).
-It uses an installed Italian voice when one is present. If speech fails, the
-radio line is still printed and an error is written to stderr. `--speak` does
-nothing when no radio line is produced and does not speak a `--brief` line.
+`--speak` says each printed radio line with local Windows speech (System.Speech),
+the rule line first and the llm line when that line is printed. It uses an
+installed Italian voice when one is present. If speech fails, the radio JSON
+is still printed and an error is written to stderr. `--speak` does nothing
+when no radio line is produced.
 
 ## Version 1 Recording
 
