@@ -96,7 +96,7 @@ def _voice_rank(model: Path, voice: str) -> int | None:
     return 2
 
 
-def find_italian_model(voice: str = "paola") -> Path | None:
+def find_italian_model(voice: str = "serena") -> Path | None:
     """Return the installed it_IT Piper model for the named voice. High ranks above medium."""
     found = []
     seen = set()
@@ -191,7 +191,7 @@ def _try_piper(text: str, voice: str) -> bool:
     return True
 
 
-def speak(text: str, voice: str = "paola") -> None:
+def speak(text: str, voice: str = "serena") -> None:
     """Speak one radio line with the selected Piper voice, or Windows SAPI when it is missing."""
     global _NOTICE_SENT
     if _try_piper(text, voice):

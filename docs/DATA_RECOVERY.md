@@ -94,7 +94,7 @@ are already in that folder. Riccardo has no medium file in that set; use
 `it_IT-riccardo-x_low.onnx` and its `.onnx.json` from
 `https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/riccardo/x_low/`.
 
-`--voice paola`, `riccardo`, `serena`, or `dii` selects which installed Piper file speaks. The default is `paola`.
+`--voice paola`, `riccardo`, `serena`, or `dii` selects which installed Piper file speaks. The default spoken voice is Serena (`it_IT-serena-high`). Dii remains available locally and is not the official project voice (CC BY-NC-SA).
 That flag is a Voice Profile stand-in: it changes only the sound of the radio.
 Engineer Profiles, which would carry attitude and verbosity, are a separate
 layer and are not implemented in this slice. See `PROJECT_JOURNAL.md`,

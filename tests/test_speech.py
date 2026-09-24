@@ -65,10 +65,12 @@ class SpeechTests(unittest.TestCase):
             with patch("raceengineer.speech._search_roots", return_value=[root]), \
                  patch("raceengineer.speech.find_piper", return_value=None):
                 chosen = find_italian_model()
+                paola = find_italian_model("paola")
                 riccardo = find_italian_model("riccardo")
                 serena = find_italian_model("serena")
                 dii = find_italian_model("dii")
-        self.assertEqual(chosen.name, "it_IT-paola-medium.onnx")
+        self.assertEqual(chosen.name, "it_IT-serena-high.onnx")
+        self.assertEqual(paola.name, "it_IT-paola-medium.onnx")
         self.assertEqual(riccardo.name, "it_IT-riccardo-x_low.onnx")
         self.assertEqual(serena.name, "it_IT-serena-high.onnx")
         self.assertEqual(dii.name, "it_IT-dii-high.onnx")
