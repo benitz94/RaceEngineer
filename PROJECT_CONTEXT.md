@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-09-23
+Last updated: 2026-09-24
 
 ## Current State
 
@@ -27,10 +27,13 @@ and file replay, text CLI output, an optional UDP metadata probe, and a
 deterministic low-fuel rule. A `fuel_low` alert also prints a versioned radio
 line (`raceengineer.radio` version 1, `source: rule`) whose driver text is
 "Box, box. Questo giro." The alert log message stays English.
-`--speak` says the radio line with local Windows speech. That slice is not a
-substitute for choosing the models. It does not define the production
-hardware. Critical alerts stay in rules code; they are not delegated to
-either model.
+`--speak` says that rule line with local Windows speech. `--brief` asks local
+Ollama (`qwen3.5:4b`) for a second radio line (`source: llm`) after the rule
+line and does not replace it. If Ollama is down, times out, or returns empty,
+the process continues and stderr gets one line. The typed decision model is
+not implemented. That slice is not a substitute for choosing the models. It
+does not define the production hardware. Critical alerts stay in rules code;
+they are not delegated to either model.
 
 Runtime and offline tests use only the Python standard library. Python 3.10 or
 newer is required. Run instructions and recording semantics are documented in

@@ -5,8 +5,9 @@ import json
 import os
 import subprocess
 import sys
+from .briefing import BriefingUnavailable, brief_alert
 from .recording import encode
-from .rules import FUEL_LOW_THRESHOLD, RulesEngine, rule_radio
+from .rules import FUEL_LOW_THRESHOLD, Radio, RulesEngine, rule_radio
 from .sources import paced, replay, synthetic, validate_rate
 from .udp_probe import probe
 
@@ -59,6 +60,7 @@ def main(argv=None):
     output.add_argument("--samples-only", action="store_true", help="print replayable sample recordings only")
     output.add_argument("--radio-only", action="store_true", help="print radio lines only")
     parser.add_argument("--speak", action="store_true", help="speak radio lines with local Windows speech")
+    parser.add_argument("--brief", action="store_true", help="ask local Ollama for a briefing after a rule radio line")
     parser.add_argument("--fuel-low-threshold", type=float, default=FUEL_LOW_THRESHOLD)
     args = parser.parse_args(argv)
     if args.source == "file" and not args.path:
@@ -94,13 +96,19 @@ def main(argv=None):
                     continue
                 radio = rule_radio(alert)
                 print(radio.encode(), flush=True)
-                if not args.speak:
-                    continue
-                try:
-                    speak(radio.text)
-                except RuntimeError as error:
-                    speech_failed = True
-                    print(f"error: speech failed: {error}", file=sys.stderr)
+                if args.speak:
+                    try:
+                        speak(radio.text)
+                    except RuntimeError as error:
+                        speech_failed = True
+                        print(f"error: speech failed: {error}", file=sys.stderr)
+                if args.brief and alert.type == "fuel_low":
+                    try:
+                        sentence = brief_alert(alert)
+                    except BriefingUnavailable as error:
+                        print(f"error: briefing unavailable: {error}", file=sys.stderr)
+                    else:
+                        print(Radio("llm", radio.type, sentence, radio.timestamp).encode(), flush=True)
             if speech_failed:
                 return 1
     except (ValueError, OSError) as error:

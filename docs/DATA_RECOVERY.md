@@ -34,6 +34,7 @@ does not run telemetry rules.
 python -m raceengineer.demo --source synthetic --alerts-only
 python -m raceengineer.demo --source synthetic --radio-only
 python -m raceengineer.demo --source synthetic --radio-only --speak
+python -m raceengineer.demo --source synthetic --radio-only --brief
 python -m raceengineer.demo --source synthetic --fuel-low-threshold 9.8 --alerts-only
 ```
 
@@ -57,13 +58,18 @@ from missing fields, lap changes, or out-of-order timestamps.
 A `fuel_low` alert also prints one radio line: `format: "raceengineer.radio"`,
 `version: 1`, and a `radio` object with `source: "rule"`, `type: "fuel_low"`,
 `text: "Box, box. Questo giro."`, and the same timestamp. The alert
-message stays the English log line. No language model is called. Missing or
+message stays the English log line. Missing or
 invalid fuel still produces neither an alert nor a radio line.
+Without `--brief`, no language model is called. With `--brief`, after the rule
+radio line, local Ollama model `qwen3.5:4b` (`http://127.0.0.1:11434/api/chat`,
+about 15 seconds) may print a second `raceengineer.radio` line (`source: "llm"`,
+same type and timestamp). If Ollama is down, times out, or returns empty,
+nothing extra is printed, stderr gets one line, and the process does not fail.
 
-`--speak` says that radio text with local Windows speech (System.Speech). It
-uses an installed Italian voice when one is present. If speech fails, the
+`--speak` says the rule radio text with local Windows speech (System.Speech).
+It uses an installed Italian voice when one is present. If speech fails, the
 radio line is still printed and an error is written to stderr. `--speak` does
-nothing when no radio line is produced.
+nothing when no radio line is produced and does not speak a `--brief` line.
 
 ## Version 1 Recording
 
