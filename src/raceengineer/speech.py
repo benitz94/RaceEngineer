@@ -50,18 +50,33 @@ def _search_roots() -> list[Path]:
 
 
 def find_piper() -> Path | None:
-    """piper.exe on PATH, or a one-time copy under tools/piper or the local cache."""
+    """piper on PATH, or a copy under tools/piper or the local cache.
+
+    When several copies exist, the newest wins. High voices need a current
+    Piper; the 2023 binary cannot phonemize them.
+    """
+    found = []
     for name in ("piper", "piper.exe"):
-        found = shutil.which(name)
-        if found:
-            return Path(found)
+        located = shutil.which(name)
+        if located:
+            found.append(Path(located))
     for root in _search_roots():
-        if not root.is_dir():
+        if root.is_dir():
+            found.extend(root.rglob("piper.exe"))
+    unique = []
+    seen = set()
+    for path in found:
+        if not path.is_file():
             continue
-        matches = sorted(root.rglob("piper.exe"))
-        if matches:
-            return matches[0]
-    return None
+        key = str(path.resolve())
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(path)
+    if not unique:
+        return None
+    unique.sort(key=lambda path: path.stat().st_mtime, reverse=True)
+    return unique[0]
 
 
 def _config_for(model: Path) -> Path:
@@ -74,13 +89,15 @@ def _voice_rank(model: Path, voice: str) -> int | None:
         return None
     if not _config_for(model).is_file():
         return None
-    if "medium" in name:
+    if "high" in name:
         return 0
-    return 1
+    if "medium" in name:
+        return 1
+    return 2
 
 
 def find_italian_model(voice: str = "paola") -> Path | None:
-    """Return the installed it_IT Piper model for paola or riccardo."""
+    """Return the installed it_IT Piper model for the named voice. High ranks above medium."""
     found = []
     seen = set()
     roots = list(_search_roots())

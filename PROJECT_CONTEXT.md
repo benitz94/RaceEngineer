@@ -29,8 +29,8 @@ line (`raceengineer.radio` version 1, `source: rule`) whose driver text is
 "Box, box. Questo giro." The alert log message stays English.
 `--speak` says each printed radio line with local Piper Italian when an
 `it_IT` model is installed, and otherwise Windows speech, rule line first and
-the llm line when one is printed. `--voice paola` or `--voice riccardo`
-selects that Piper file. Engineer Profiles are not implemented. A deterministic gate
+the llm line when one is printed. `--voice` selects Paola, Riccardo, Serena,
+or Dii. The default is Paola. Engineer Profiles are not implemented. A deterministic gate
 in `src/raceengineer/decision.py` answers `canned_or_brief` and
 `grounded_or_reject`. It is code, not a neural decision model. `--brief` is
 the declared brief skill. When the gate answers `brief`, local Ollama

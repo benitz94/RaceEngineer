@@ -52,15 +52,26 @@ class SpeechTests(unittest.TestCase):
     def test_finder_prefers_paola_and_skips_english(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            for name in ("en_US-lessac-medium.onnx", "it_IT-riccardo-x_low.onnx", "it_IT-paola-medium.onnx"):
+            for name in (
+                "en_US-lessac-medium.onnx",
+                "it_IT-riccardo-x_low.onnx",
+                "it_IT-paola-medium.onnx",
+                "it_IT-serena-medium.onnx",
+                "it_IT-serena-high.onnx",
+                "it_IT-dii-high.onnx",
+            ):
                 (root / name).write_bytes(b"x")
                 (root / f"{name}.json").write_text("{}", encoding="utf-8")
             with patch("raceengineer.speech._search_roots", return_value=[root]), \
                  patch("raceengineer.speech.find_piper", return_value=None):
                 chosen = find_italian_model()
                 riccardo = find_italian_model("riccardo")
+                serena = find_italian_model("serena")
+                dii = find_italian_model("dii")
         self.assertEqual(chosen.name, "it_IT-paola-medium.onnx")
         self.assertEqual(riccardo.name, "it_IT-riccardo-x_low.onnx")
+        self.assertEqual(serena.name, "it_IT-serena-high.onnx")
+        self.assertEqual(dii.name, "it_IT-dii-high.onnx")
 
     def test_unknown_voice_exits_without_speech(self):
         error = io.StringIO()
