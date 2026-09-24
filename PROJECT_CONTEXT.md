@@ -27,14 +27,16 @@ and file replay, text CLI output, an optional UDP metadata probe, and a
 deterministic low-fuel rule. A `fuel_low` alert also prints a versioned radio
 line (`raceengineer.radio` version 1, `source: rule`) whose driver text is
 "Box, box. Questo giro." The alert log message stays English.
-`--speak` says that rule line with local Windows speech. `--brief` asks local
-Ollama (`qwen3.5:4b`) for a second radio line (`source: llm`) after the rule
-line and does not replace it. If Ollama is down, times out, or returns empty,
-the process continues and stderr gets one line. A log-like reply is dropped
-and stderr says brief rejected. The typed decision model is
-not implemented. That slice is not a substitute for choosing the models. It
-does not define the production hardware. Critical alerts stay in rules code;
-they are not delegated to either model.
+`--speak` says that rule line with local Windows speech. A deterministic gate
+in `src/raceengineer/decision.py` answers `canned_or_brief` and
+`grounded_or_reject`. It is code, not a neural decision model. `--brief` is
+the declared brief skill. When the gate answers `brief`, local Ollama
+(`qwen3.5:4b`) may add a second radio line (`source: llm`) after the rule
+line. A down model, an empty reply, or a `reject` label leaves the rule line
+in place. The neural decision model is still not chosen. That slice is not a
+substitute for choosing the models. It does not define the production
+hardware. Critical alerts stay in rules code; they are not delegated to
+either model.
 
 Runtime and offline tests use only the Python standard library. Python 3.10 or
 newer is required. Run instructions and recording semantics are documented in

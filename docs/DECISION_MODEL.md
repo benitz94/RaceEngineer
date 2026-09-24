@@ -1,6 +1,10 @@
 # Typed decision model
 
-Status: planned. Not implemented. This document records intent.
+Status: the neural model is planned and not implemented. This document records intent.
+
+The first slice is deterministic code in `src/raceengineer/decision.py`, not a neural decision model.
+It answers only `canned_or_brief` and `grounded_or_reject`. `--brief` stands in for the brief skill.
+A `reject` label drops the llm radio line. The rule radio stays.
 
 RaceEngineer will use two local inference roles. They are not the same
 component.

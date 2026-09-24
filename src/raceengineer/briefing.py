@@ -173,8 +173,7 @@ def brief_alert(alert, opener=None, timeout=TIMEOUT_SECONDS) -> str:
     """Return the model sentence for a fuel_low alert.
 
     Raises BriefingUnavailable when Ollama is down, times out, or returns
-    an empty sentence. Raises BriefRejected when the sentence is log-like.
-    The rule radio stays the caller's responsibility.
+    an empty sentence. The caller decides whether the sentence may air.
     """
     if opener is None:
         opener = urllib.request.urlopen
@@ -193,4 +192,4 @@ def brief_alert(alert, opener=None, timeout=TIMEOUT_SECONDS) -> str:
         raise BriefingUnavailable(_http_failure(error.code, _error_detail(error))) from error
     except OSError as error:
         raise _unavailable(error) from error
-    return _accept_radio_text(_sentence(raw))
+    return _sentence(raw)

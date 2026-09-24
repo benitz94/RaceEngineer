@@ -5,7 +5,8 @@ import json
 import os
 import subprocess
 import sys
-from .briefing import BriefRejected, BriefingUnavailable, brief_alert
+from .briefing import BriefRejected, BriefingUnavailable, _accept_radio_text, brief_alert
+from .decision import answer
 from .recording import encode
 from .rules import FUEL_LOW_THRESHOLD, Radio, RulesEngine, rule_radio
 from .sources import paced, replay, synthetic, validate_rate
@@ -102,15 +103,24 @@ def main(argv=None):
                     except RuntimeError as error:
                         speech_failed = True
                         print(f"error: speech failed: {error}", file=sys.stderr)
-                if args.brief and alert.type == "fuel_low":
-                    try:
-                        sentence = brief_alert(alert)
-                    except BriefRejected:
-                        print("error: brief rejected", file=sys.stderr)
-                    except BriefingUnavailable as error:
-                        print(f"error: briefing unavailable: {error}", file=sys.stderr)
-                    else:
-                        print(Radio("llm", radio.type, sentence, radio.timestamp).encode(), flush=True)
+                if alert.type != "fuel_low":
+                    continue
+                if answer("canned_or_brief", {"brief": args.brief}) != "brief":
+                    continue
+                try:
+                    sentence = brief_alert(alert)
+                except BriefingUnavailable as error:
+                    print(f"error: briefing unavailable: {error}", file=sys.stderr)
+                    continue
+                if answer("grounded_or_reject", {"text": sentence}) == "reject":
+                    print("error: brief rejected", file=sys.stderr)
+                    continue
+                try:
+                    sentence = _accept_radio_text(sentence)
+                except BriefRejected:
+                    print("error: brief rejected", file=sys.stderr)
+                else:
+                    print(Radio("llm", radio.type, sentence, radio.timestamp).encode(), flush=True)
             if speech_failed:
                 return 1
     except (ValueError, OSError) as error:
