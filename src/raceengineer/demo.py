@@ -118,7 +118,7 @@ def main(argv=None):
                 except BriefingUnavailable as error:
                     print(f"error: briefing unavailable: {error}", file=sys.stderr)
                     continue
-                if answer("grounded_or_reject", {"text": sentence}) == "reject":
+                if answer("grounded_or_reject", {"text": sentence, "fuel": alert.fuel}) == "reject":
                     print("error: brief rejected", file=sys.stderr)
                     continue
                 try:

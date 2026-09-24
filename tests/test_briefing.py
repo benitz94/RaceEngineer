@@ -253,7 +253,7 @@ class BriefingTests(unittest.TestCase):
 
         def opener(request, timeout):
             calls.append(json.loads(json.loads(request.data.decode())["messages"][1]["content"]))
-            return _Response({"message": {"content": "Benzina bassa. Entra ora."}})
+            return _Response({"message": {"content": "Benzina. Box questo giro."}})
 
         with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
             path = Path(directory) / "samples.jsonl"

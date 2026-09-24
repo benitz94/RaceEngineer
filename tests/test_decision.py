@@ -33,7 +33,7 @@ class DecisionTests(unittest.TestCase):
         self.assertEqual(answer("canned_or_brief", {"brief": True}), "brief")
 
     def test_grounded_or_reject_labels(self):
-        self.assertEqual(answer("grounded_or_reject", {"text": CLEAN}), "grounded")
+        self.assertEqual(answer("grounded_or_reject", {"text": CLEAN, "fuel": 10}), "grounded")
         self.assertEqual(answer("grounded_or_reject", {"text": "Box, box. Questo giro."}), "grounded")
         for text in (
             LOG,
@@ -45,6 +45,9 @@ class DecisionTests(unittest.TestCase):
         ):
             with self.subTest(text=text):
                 self.assertEqual(answer("grounded_or_reject", {"text": text}), "reject")
+
+    def test_tangente_sud_is_rejected(self):
+        self.assertEqual(answer("grounded_or_reject", {"text": "tangente sud", "fuel": 10}), "reject")
 
     def test_undeclared_question_fails(self):
         with self.assertRaises(ValueError):
