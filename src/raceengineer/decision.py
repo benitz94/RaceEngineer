@@ -3,38 +3,22 @@
 This is code, not a neural model. It does not call Ollama.
 """
 
-import math
 import re
 
 _QUESTIONS: dict[str, tuple[str, ...]] = {}
-_TOKEN = re.compile(r"\d+(?:[.,]\d+)?|[^\W\d_]+", re.UNICODE)
-_REGISTER = frozenset({"box", "rientra", "fuel", "benzina", "litri", "giro"})
-_FUNCTION = frozenset({
-    "a", "ad", "ai", "al", "allo", "alla", "alle", "agli",
-    "di", "del", "dello", "della", "dei", "degli", "delle",
-    "da", "dal", "dallo", "dalla", "dai", "dagli",
-    "in", "nel", "nello", "nella", "nei", "negli", "nelle",
-    "su", "sul", "sullo", "sulla", "sui", "sugli", "sulle",
-    "con", "per", "tra", "fra", "e", "ed", "o", "od", "che", "non",
-    "il", "lo", "la", "i", "gli", "le", "un", "uno", "una",
-    "questo", "questa", "questi", "queste",
-})
-_TRACK = frozenset({
-    "place", "places", "posto", "luogo",
-    "corner", "corners", "curva", "curve",
-    "sector", "sectors", "settore", "settori",
-    "tangent", "tangents", "tangente", "tangenti",
-    "straight", "straights", "rettilineo", "rettilinei", "rettifilo",
-    "scarica", "scaricare",
-    "sud", "nord", "est", "ovest", "south", "north", "east", "west",
-})
-_ITALIAN = {
-    0: "zero", 1: "uno", 2: "due", 3: "tre", 4: "quattro", 5: "cinque",
-    6: "sei", 7: "sette", 8: "otto", 9: "nove", 10: "dieci", 11: "undici",
-    12: "dodici", 13: "tredici", 14: "quattordici", 15: "quindici", 16: "sedici",
-    17: "diciassette", 18: "diciotto", 19: "diciannove", 20: "venti", 30: "trenta",
-    40: "quaranta", 50: "cinquanta", 60: "sessanta", 70: "settanta", 80: "ottanta",
-    90: "novanta", 100: "cento",
+_WORD = re.compile(r"[^\W\d_]+(?:_[^\W\d_]+)*", re.UNICODE)
+_TIMESTAMP = re.compile(r"\d+\.\d+")
+_LOG_WORDS = frozenset({"type", "timestamp", "format", "version", "source", "fuel_low"})
+_TRACK_FIELDS = {
+    "place": frozenset({
+        "place", "places", "posto", "luogo",
+        "sud", "nord", "est", "ovest", "south", "north", "east", "west",
+    }),
+    "corner": frozenset({"corner", "corners", "curva", "curve"}),
+    "sector": frozenset({"sector", "sectors", "settore", "settori"}),
+    "tangent": frozenset({"tangent", "tangents", "tangente", "tangenti"}),
+    "straight": frozenset({"straight", "straights", "rettilineo", "rettilinei", "rettifilo"}),
+    "scarica": frozenset({"scarica", "scaricare"}),
 }
 
 
@@ -67,36 +51,19 @@ def _present(payload: dict, key: str) -> bool:
     return key in payload and payload[key] not in (None, "")
 
 
-def _fuel_forms(fuel) -> set[str]:
-    if isinstance(fuel, bool) or not isinstance(fuel, (int, float)) or not math.isfinite(fuel):
-        return set()
-    if float(fuel).is_integer():
-        whole = int(fuel)
-        forms = {str(whole), f"{whole}.0", f"{whole},0"}
-        word = _ITALIAN.get(whole)
-        if word:
-            forms.add(word)
-        return forms
-    decimal = format(float(fuel), ".6f").rstrip("0").rstrip(".")
-    return {decimal, decimal.replace(".", ",")}
-
-
 def _grounded_or_reject(payload: dict) -> str:
     text = payload.get("text")
-    if not isinstance(text, str) or not text.strip() or "`" in text:
+    if not isinstance(text, str):
         return "reject"
-    tokens = [match.group(0).lower() for match in _TOKEN.finditer(text)]
-    if not tokens:
+    if "`" in text or _TIMESTAMP.search(text):
         return "reject"
-    # No corner or sector was passed, so a place word is invented.
-    if not (_present(payload, "corner") or _present(payload, "sector")) and set(tokens) & _TRACK:
+    tokens = {match.group(0).lower() for match in _WORD.finditer(text)}
+    if tokens & _LOG_WORDS:
         return "reject"
-    allowed = set(_REGISTER | _FUNCTION | _fuel_forms(payload.get("fuel")))
-    for key in ("corner", "sector"):
-        if _present(payload, key):
-            allowed.update(match.group(0).lower() for match in _TOKEN.finditer(str(payload[key])))
-    if any(token not in allowed for token in tokens):
-        return "reject"
+    # A place word is invented when that kind of field was not passed.
+    for field, words in _TRACK_FIELDS.items():
+        if not _present(payload, field) and tokens & words:
+            return "reject"
     return "grounded"
 
 

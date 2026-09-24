@@ -34,8 +34,9 @@ in `src/raceengineer/decision.py` answers `canned_or_brief` and
 the declared brief skill. When the gate answers `brief`, local Ollama
 (`qwen3.5:4b`) may add a second radio line (`source: llm`) after the rule
 line. A down model, an empty reply, or a `reject` label leaves the rule line
-in place. A briefing that names a track place is rejected. The neural
-decision model is still not chosen. That slice is not a
+in place. A briefing that names a track place, or that reads like a log,
+is rejected. Ordinary Italian is kept. The neural decision model is still
+not chosen. That slice is not a
 substitute for choosing the models. It does not define the production
 hardware. Critical alerts stay in rules code; they are not delegated to
 either model.

@@ -49,6 +49,10 @@ class DecisionTests(unittest.TestCase):
     def test_tangente_sud_is_rejected(self):
         self.assertEqual(answer("grounded_or_reject", {"text": "tangente sud", "fuel": 10}), "reject")
 
+    def test_ordinary_italian_fuel_sentence_is_grounded(self):
+        text = "Ho dieci litri di benzina nel serbatoio, box."
+        self.assertEqual(answer("grounded_or_reject", {"text": text, "fuel": 10}), "grounded")
+
     def test_undeclared_question_fails(self):
         with self.assertRaises(ValueError):
             answer("speak_or_hold", {})
