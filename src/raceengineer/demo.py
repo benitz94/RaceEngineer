@@ -113,20 +113,31 @@ def main(argv=None):
                     continue
                 if answer("canned_or_brief", {"brief": args.brief}) != "brief":
                     continue
-                try:
-                    sentence = brief_alert(alert)
-                except BriefingUnavailable as error:
-                    print(f"error: briefing unavailable: {error}", file=sys.stderr)
-                    continue
-                if answer("grounded_or_reject", {"text": sentence, "fuel": alert.fuel}) == "reject":
-                    print("error: brief rejected", file=sys.stderr)
-                    continue
-                try:
-                    sentence = _accept_radio_text(sentence)
-                except BriefRejected:
-                    print("error: brief rejected", file=sys.stderr)
+                aired = None
+                saw_reject = False
+                for _attempt in range(2):
+                    try:
+                        candidate = brief_alert(alert)
+                    except BriefingUnavailable as error:
+                        print(f"error: briefing unavailable: {error}", file=sys.stderr)
+                        aired = None
+                        saw_reject = False
+                        break
+                    if answer("grounded_or_reject", {"text": candidate, "fuel": alert.fuel}) == "reject":
+                        saw_reject = True
+                        continue
+                    try:
+                        aired = _accept_radio_text(candidate)
+                    except BriefRejected:
+                        saw_reject = True
+                        continue
+                    saw_reject = False
+                    break
                 else:
-                    llm = Radio("llm", radio.type, sentence, radio.timestamp)
+                    if saw_reject:
+                        print("error: brief rejected", file=sys.stderr)
+                if aired:
+                    llm = Radio("llm", radio.type, aired, radio.timestamp)
                     print(llm.encode(), flush=True)
                     if args.speak and _speak_printed(llm.text):
                         speech_failed = True

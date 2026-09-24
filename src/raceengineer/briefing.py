@@ -41,6 +41,12 @@ _FORBIDDEN_WORDS = frozenset({
 })
 _MAX_SENTENCES = 2
 _MAX_WORDS = 12
+_SPOKEN_FUEL = {
+    0: "zero", 1: "uno", 2: "due", 3: "tre", 4: "quattro", 5: "cinque",
+    6: "sei", 7: "sette", 8: "otto", 9: "nove", 10: "dieci", 11: "undici",
+    12: "dodici", 13: "tredici", 14: "quattordici", 15: "quindici", 16: "sedici",
+    17: "diciassette", 18: "diciotto", 19: "diciannove", 20: "venti",
+}
 
 
 class BriefingUnavailable(Exception):
@@ -87,14 +93,37 @@ def _think_rejected(status, detail) -> bool:
     return any(marker in lowered for marker in markers)
 
 
-def _payload(user: str, *, include_think: bool) -> dict:
+def _spoken_fuel(fuel) -> str:
+    """Italian amount for an example line. Integral fuels use words, not a dotted timestamp."""
+    if isinstance(fuel, bool) or not isinstance(fuel, (int, float)):
+        return "la"
+    if float(fuel).is_integer() and int(fuel) in _SPOKEN_FUEL:
+        return _SPOKEN_FUEL[int(fuel)]
+    if float(fuel).is_integer():
+        return str(int(fuel))
+    return format(float(fuel), ".6f").rstrip("0").rstrip(".").replace(".", ",")
+
+
+def _example_lines(fuel) -> tuple[str, str]:
+    spoken = _spoken_fuel(fuel)
+    return (
+        f"Ho {spoken} litri di benzina nel serbatoio, box.",
+        f"Rientra. Benzina a {spoken} litri.",
+    )
+
+
+def _payload(user: str, fuel, *, include_think: bool) -> dict:
+    spoken_cue = json.dumps({"fuel": fuel}, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    for line in _example_lines(fuel):
+        messages.append({"role": "user", "content": spoken_cue})
+        messages.append({"role": "assistant", "content": line})
+    messages.append({"role": "user", "content": user})
     payload = {
         "model": MODEL,
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user},
-        ],
+        "messages": messages,
         "stream": False,
+        "options": {"temperature": 0},
     }
     if include_think:
         payload["think"] = False
@@ -112,15 +141,15 @@ def _post(payload, opener, timeout) -> bytes:
         return response.read()
 
 
-def _chat(user, opener, timeout) -> bytes:
+def _chat(user, fuel, opener, timeout) -> bytes:
     try:
-        return _post(_payload(user, include_think=True), opener, timeout)
+        return _post(_payload(user, fuel, include_think=True), opener, timeout)
     except urllib.error.HTTPError as error:
         detail = _error_detail(error)
         if not _think_rejected(error.code, detail):
             raise BriefingUnavailable(_http_failure(error.code, detail)) from error
     # Older Ollama builds reject the think field; retry once without it.
-    return _post(_payload(user, include_think=False), opener, timeout)
+    return _post(_payload(user, fuel, include_think=False), opener, timeout)
 
 
 def _unwrap(text: str) -> str:
@@ -185,7 +214,7 @@ def brief_alert(alert, opener=None, timeout=TIMEOUT_SECONDS) -> str:
     except (TypeError, ValueError) as error:
         raise BriefingUnavailable(_one_line(error) or "unavailable") from error
     try:
-        raw = _chat(user, opener, timeout)
+        raw = _chat(user, alert.fuel, opener, timeout)
     except BriefingUnavailable:
         raise
     except urllib.error.HTTPError as error:

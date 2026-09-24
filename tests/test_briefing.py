@@ -80,8 +80,18 @@ class BriefingTests(unittest.TestCase):
         self.assertEqual(payload["model"], "qwen3.5:4b")
         self.assertIs(payload["stream"], False)
         self.assertIs(payload["think"], False)
+        self.assertEqual(payload["options"], {"temperature": 0})
         self.assertEqual(payload["messages"][0], {"role": "system", "content": SYSTEM_PROMPT})
-        self.assertEqual(json.loads(payload["messages"][1]["content"]), {
+        examples = [item["content"] for item in payload["messages"] if item["role"] == "assistant"]
+        self.assertEqual(examples, [
+            "Ho dieci litri di benzina nel serbatoio, box.",
+            "Rientra. Benzina a dieci litri.",
+        ])
+        for line in examples:
+            for place in ("curva", "settore", "tangente", "sud", "rettilineo", "scarica"):
+                self.assertNotIn(place, line.lower())
+        last_user = [item["content"] for item in payload["messages"] if item["role"] == "user"][-1]
+        self.assertEqual(json.loads(last_user), {
             "fuel": 10.0, "timestamp": 1.5, "type": "fuel_low",
         })
 
@@ -89,7 +99,8 @@ class BriefingTests(unittest.TestCase):
         captured = {}
 
         def opener(request, timeout):
-            captured["user"] = json.loads(request.data.decode())["messages"][1]["content"]
+            messages = json.loads(request.data.decode())["messages"]
+            captured["user"] = [item["content"] for item in messages if item["role"] == "user"][-1]
             return _Response({"message": {"content": "Benzina bassa. Entra ora."}})
 
         brief_alert(_alert(timestamp=None, fuel=9), opener=opener)
@@ -189,7 +200,8 @@ class BriefingTests(unittest.TestCase):
             "source": "llm", "type": "fuel_low", "text": SENTENCE, "timestamp": 1.5,
         })
         self.assertNotIn("sector", briefing["text"])
-        user = json.loads(captured["payload"]["messages"][1]["content"])
+        users = [item["content"] for item in captured["payload"]["messages"] if item["role"] == "user"]
+        user = json.loads(users[-1])
         self.assertEqual(user, {"fuel": 10.0, "timestamp": 1.5, "type": "fuel_low"})
 
     def test_ollama_failures_keep_the_rule_radio_and_exit_zero(self):
@@ -252,7 +264,8 @@ class BriefingTests(unittest.TestCase):
         calls = []
 
         def opener(request, timeout):
-            calls.append(json.loads(json.loads(request.data.decode())["messages"][1]["content"]))
+            messages = json.loads(request.data.decode())["messages"]
+            calls.append(json.loads([item["content"] for item in messages if item["role"] == "user"][-1]))
             return _Response({"message": {"content": "Benzina. Box questo giro."}})
 
         with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
@@ -312,6 +325,40 @@ class BriefingTests(unittest.TestCase):
             "error: speech failed: sapi down",
         ])
         self.assertNotIn("briefing unavailable", error.getvalue())
+
+    def test_rejected_brief_is_retried_once_then_aired(self):
+        replies = iter(["tangente sud", "Ho dieci litri di benzina nel serbatoio, box."])
+        calls = []
+
+        def opener(request, timeout):
+            body = json.loads(request.data.decode())
+            calls.append(body["options"]["temperature"])
+            return _Response({"message": {"content": next(replies)}})
+
+        with patch("urllib.request.urlopen", side_effect=opener), \
+             patch("socket.create_connection", side_effect=OSError("blocked")):
+            radios, stderr = self.run_cli(["--source", "synthetic", "--radio-only", "--brief"])
+        self.assertEqual(stderr, "")
+        self.assertEqual(calls, [0, 0])
+        self.assertEqual([radio["radio"]["text"] for radio in radios], [
+            "Box, box. Questo giro.",
+            "Ho dieci litri di benzina nel serbatoio, box.",
+        ])
+
+    def test_second_reject_keeps_the_rule_radio(self):
+        calls = []
+
+        def opener(request, timeout):
+            calls.append(1)
+            return _Response({"message": {"content": "tangente sud"}})
+
+        with patch("urllib.request.urlopen", side_effect=opener), \
+             patch("socket.create_connection", side_effect=OSError("blocked")):
+            radios, stderr = self.run_cli(["--source", "synthetic", "--radio-only", "--brief"])
+        self.assertEqual(calls, [1, 1])
+        self.assertEqual(len(radios), 1)
+        self.assertEqual(radios[0]["radio"]["text"], "Box, box. Questo giro.")
+        self.assertEqual(stderr.splitlines(), ["error: brief rejected"])
 
     def test_speak_does_not_say_a_rejected_brief(self):
         spoken = []

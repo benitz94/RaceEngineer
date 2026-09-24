@@ -32,8 +32,8 @@ first and the llm line when one is printed. A deterministic gate
 in `src/raceengineer/decision.py` answers `canned_or_brief` and
 `grounded_or_reject`. It is code, not a neural decision model. `--brief` is
 the declared brief skill. When the gate answers `brief`, local Ollama
-(`qwen3.5:4b`) may add a second radio line (`source: llm`) after the rule
-line. A down model, an empty reply, or a `reject` label leaves the rule line
+(`qwen3.5:4b`, temperature 0) may add a second radio line (`source: llm`)
+after the rule line. A rejected line is tried once more. A down model, an empty reply, or a `reject` label leaves the rule line
 in place. A briefing that names a track place, or that reads like a log,
 is rejected. Ordinary Italian is kept. The neural decision model is still
 not chosen. That slice is not a
