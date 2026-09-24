@@ -2,50 +2,14 @@
 
 import argparse
 import json
-import os
-import subprocess
 import sys
 from .briefing import BriefRejected, BriefingUnavailable, _accept_radio_text, brief_alert
 from .decision import answer
 from .recording import encode
 from .rules import FUEL_LOW_THRESHOLD, Radio, RulesEngine, rule_radio
 from .sources import paced, replay, synthetic, validate_rate
+from .speech import speak
 from .udp_probe import probe
-
-_SPEAK_SCRIPT = r"""
-$ErrorActionPreference = 'Stop'
-Add-Type -AssemblyName System.Speech
-$synth = New-Object System.Speech.Synthesis.SpeechSynthesizer
-$italian = @($synth.GetInstalledVoices() | Where-Object {
-    $_.Enabled -and $_.VoiceInfo.Culture.TwoLetterISOLanguageName -eq 'it'
-})
-if ($italian.Count -gt 0) {
-    $synth.SelectVoice($italian[0].VoiceInfo.Name)
-}
-$synth.Speak($env:RACEENGINEER_RADIO_TEXT)
-"""
-
-
-def speak(text: str) -> None:
-    """Speak one radio line with Windows SAPI. Raises RuntimeError on failure."""
-    env = os.environ.copy()
-    env["RACEENGINEER_RADIO_TEXT"] = text
-    try:
-        completed = subprocess.run(
-            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", _SPEAK_SCRIPT],
-            env=env,
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=30,
-        )
-    except subprocess.TimeoutExpired:
-        raise RuntimeError("timed out") from None
-    except OSError as error:
-        raise RuntimeError(f"could not run powershell.exe: {error}") from error
-    if completed.returncode != 0:
-        detail = (completed.stderr or completed.stdout or "Windows speech failed").strip()
-        raise RuntimeError(detail)
 
 
 def _speak_printed(text: str) -> bool:
@@ -70,7 +34,7 @@ def main(argv=None):
     output.add_argument("--alerts-only", action="store_true", help="suppress sample output")
     output.add_argument("--samples-only", action="store_true", help="print replayable sample recordings only")
     output.add_argument("--radio-only", action="store_true", help="print radio lines only")
-    parser.add_argument("--speak", action="store_true", help="speak radio lines with local Windows speech")
+    parser.add_argument("--speak", action="store_true", help="speak radio lines with local Piper Italian, or Windows speech")
     parser.add_argument("--brief", action="store_true", help="ask local Ollama for a briefing after a rule radio line")
     parser.add_argument("--fuel-low-threshold", type=float, default=FUEL_LOW_THRESHOLD)
     args = parser.parse_args(argv)

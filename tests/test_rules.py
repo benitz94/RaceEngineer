@@ -156,13 +156,19 @@ class RulesTests(unittest.TestCase):
         self.assertIn("error: speech failed: sapi down", error.getvalue())
 
     def test_speak_invokes_windows_sapi_without_starting_it(self):
-        with patch("raceengineer.demo.subprocess.run") as run:
+        import raceengineer.speech as speech
+        speech._NOTICE_SENT = False
+        error = io.StringIO()
+        with patch("raceengineer.speech.find_piper", return_value=None), \
+             patch("raceengineer.speech.subprocess.run") as run, \
+             contextlib.redirect_stderr(error):
             run.return_value = subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="")
             speak("Box, box. Questo giro.")
         command = run.call_args.args[0]
         self.assertEqual(command[0], "powershell.exe")
         self.assertIn("System.Speech", command[-1])
         self.assertEqual(run.call_args.kwargs["env"]["RACEENGINEER_RADIO_TEXT"], "Box, box. Questo giro.")
+        self.assertEqual(error.getvalue().splitlines(), ["piper unavailable, using SAPI"])
 
 
 if __name__ == "__main__":

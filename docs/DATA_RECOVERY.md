@@ -68,11 +68,29 @@ nothing extra is printed, stderr gets one line, and the process does not fail.
 A reply that names fields, timestamps, or other log wording is dropped, and
 stderr says `brief rejected`. The rule radio stays.
 
-`--speak` says each printed radio line with local Windows speech (System.Speech),
-the rule line first and the llm line when that line is printed. It uses an
-installed Italian voice when one is present. If speech fails, the radio JSON
-is still printed and an error is written to stderr. `--speak` does nothing
-when no radio line is produced.
+`--speak` says each printed radio line, the rule line first and the llm line
+when that line is printed. It uses local Piper with an `it_IT` voice when
+`piper` is on `PATH` or under the cache below, and otherwise Windows
+System.Speech. The first fallback prints one stderr line: `piper unavailable,
+using SAPI`. If speech fails, the radio JSON is still printed and an error is
+written to stderr. `--speak` does nothing when no radio line is produced.
+
+Piper and the voice stay outside git, in `%LOCALAPPDATA%\RaceEngineer\piper`
+(`it_IT-paola-medium.onnx` plus the matching `.onnx.json`). Two setup commands:
+
+```powershell
+$dest = Join-Path $env:LOCALAPPDATA "RaceEngineer\piper"
+New-Item -ItemType Directory -Force -Path $dest | Out-Null
+curl.exe -L --fail -o "$dest\piper_windows_amd64.zip" "https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_windows_amd64.zip"
+Expand-Archive "$dest\piper_windows_amd64.zip" -DestinationPath $dest -Force
+curl.exe -L --fail -o "$dest\it_IT-paola-medium.onnx" "https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/paola/medium/it_IT-paola-medium.onnx"
+curl.exe -L --fail -o "$dest\it_IT-paola-medium.onnx.json" "https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/paola/medium/it_IT-paola-medium.onnx.json"
+```
+
+If Paola is unavailable, the same two steps with Riccardo from
+`https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/riccardo/x_low/it_IT-riccardo-x_low.onnx`
+and its `.onnx.json`. Skip the download when `piper.exe` and an `it_IT` model
+are already in that folder.
 
 ## Version 1 Recording
 
