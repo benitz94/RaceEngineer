@@ -7,6 +7,7 @@ import argparse
 import csv
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
+import ipaddress
 import json
 import math
 from pathlib import Path
@@ -15,6 +16,7 @@ import sys
 import time
 from typing import Iterable
 import urllib.error
+import urllib.parse
 import urllib.request
 
 
@@ -125,7 +127,7 @@ class OllamaBackend(ModelBackend):
         if not math.isfinite(timeout) or timeout <= 0:
             raise ValueError("timeout must be finite and greater than zero")
         self.model = model.strip()
-        self.base_url = base_url.rstrip("/")
+        self.base_url = validate_ollama_url(base_url)
         self.timeout = timeout
         self.opener = opener or urllib.request.urlopen
 
@@ -175,6 +177,37 @@ def _http_detail(error: urllib.error.HTTPError) -> str:
         return _one_line(error.read().decode("utf-8", errors="replace"))
     except OSError:
         return ""
+
+
+def validate_ollama_url(value: str) -> str:
+    """Return a loopback HTTP Ollama base URL or reject it before any request."""
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError("Ollama URL must be a nonempty HTTP URL")
+    value = value.strip()
+    try:
+        parsed = urllib.parse.urlsplit(value)
+        host = parsed.hostname
+        # Access validates malformed and out-of-range ports.
+        parsed.port
+    except ValueError as error:
+        raise ValueError(f"invalid Ollama URL: {error}") from error
+    if parsed.scheme.casefold() != "http":
+        raise ValueError("Ollama URL must use the http scheme")
+    if not parsed.netloc or host is None:
+        raise ValueError("Ollama URL must include a hostname")
+    if parsed.username is not None or parsed.password is not None:
+        raise ValueError("Ollama URL must not contain credentials")
+    if parsed.path not in ("", "/") or parsed.query or parsed.fragment:
+        raise ValueError("Ollama URL must be an HTTP origin without a path, query, or fragment")
+    local = host.casefold() == "localhost"
+    if not local:
+        try:
+            local = ipaddress.ip_address(host).is_loopback
+        except ValueError:
+            local = False
+    if not local:
+        raise ValueError("Ollama URL host must be localhost or a loopback IP address")
+    return value.rstrip("/")
 
 
 def _messages(case: dict) -> list[dict[str, str]]:
@@ -402,17 +435,25 @@ def summarize(results: Iterable[CaseResult]) -> dict:
     total = len(rows)
     passed = sum(row.passed for row in rows)
     failed = total - passed
+    false_grounded_acceptance = sum(
+        row.expected == "reject" and row.actual == "grounded" for row in rows
+    )
+    false_rejection = sum(
+        row.expected == "grounded" and row.actual == "reject" for row in rows
+    )
+    expected_reject = sum(row.expected == "reject" for row in rows)
+    expected_grounded = sum(row.expected == "grounded" for row in rows)
     return {
         "cases_total": total,
         "passed": passed,
         "failed": failed,
         "accuracy": passed / total if total else 0.0,
-        "false_grounded_acceptance": sum(
-            row.expected == "reject" and row.actual == "grounded" for row in rows
+        "false_grounded_acceptance": false_grounded_acceptance,
+        "false_grounded_acceptance_rate": (
+            false_grounded_acceptance / expected_reject if expected_reject else 0.0
         ),
-        "false_rejection": sum(
-            row.expected == "grounded" and row.actual == "reject" for row in rows
-        ),
+        "false_rejection": false_rejection,
+        "false_rejection_rate": false_rejection / expected_grounded if expected_grounded else 0.0,
         "hallucination_failures": sum(
             not row.passed and row.category == "hallucination" for row in rows
         ),

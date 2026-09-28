@@ -24,6 +24,7 @@ from tools.eval_models import (
     score_case,
     summarize,
     validate_case,
+    validate_ollama_url,
     write_csv,
     write_json,
 )
@@ -49,6 +50,10 @@ def _case(**changes):
 
 def _write_cases(path, cases):
     path.write_text("\n".join(json.dumps(case) for case in cases) + "\n", encoding="utf-8")
+
+
+def _summary_metrics():
+    return {"style_violations": [], "malformed": False}
 
 
 class _Response:
@@ -153,6 +158,29 @@ class ModelEvaluationBackendTests(unittest.TestCase):
         self.assertIn("unavailable", result.error)
         self.assertIn("refused", result.error)
 
+    def test_ollama_url_accepts_only_http_loopback_origins(self):
+        accepted = (
+            "http://127.0.0.1:11434",
+            "http://localhost:11434",
+            "http://[::1]:11434",
+        )
+        for url in accepted:
+            with self.subTest(url=url):
+                self.assertEqual(validate_ollama_url(url), url)
+
+    def test_ollama_url_rejects_public_malformed_and_credentialed_urls(self):
+        rejected = (
+            "https://example.com",
+            "http://8.8.8.8:11434",
+            "not-a-url",
+            "http://user:password@localhost:11434",
+        )
+        with patch("tools.eval_models.urllib.request.urlopen") as urlopen:
+            for url in rejected:
+                with self.subTest(url=url), self.assertRaisesRegex(ValueError, "Ollama URL"):
+                    OllamaBackend("local-model", base_url=url)
+        urlopen.assert_not_called()
+
     def test_ollama_cli_unavailable_is_nonzero_and_downloads_nothing(self):
         with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
             corpus = Path(directory) / "one.jsonl"
@@ -215,6 +243,42 @@ class ModelEvaluationScoringTests(unittest.TestCase):
         results, summary = evaluate([case], FakeBackend())
         self.assertEqual(results[0].actual, "malformed")
         self.assertEqual(summary["malformed_output_failures"], 1)
+
+    def test_false_decision_rates_use_expected_label_denominators(self):
+        rows = [
+            CaseResult("r1", "grounding", "grounded_or_reject", "reject", "grounded", False, 0, "", "", "", _summary_metrics()),
+            CaseResult("r2", "grounding", "grounded_or_reject", "reject", "reject", True, 0, "", "", "", _summary_metrics()),
+            CaseResult("g1", "grounding", "grounded_or_reject", "grounded", "reject", False, 0, "", "", "", _summary_metrics()),
+            CaseResult("g2", "grounding", "grounded_or_reject", "grounded", "grounded", True, 0, "", "", "", _summary_metrics()),
+        ]
+        summary = summarize(rows)
+        self.assertEqual(summary["false_grounded_acceptance"], 1)
+        self.assertEqual(summary["false_grounded_acceptance_rate"], 0.5)
+        self.assertEqual(summary["false_rejection"], 1)
+        self.assertEqual(summary["false_rejection_rate"], 0.5)
+
+    def test_false_decision_rates_are_zero_without_relevant_expected_labels(self):
+        rows = [
+            CaseResult("c1", "decision", "canned_or_brief", "canned", "brief", False, 0, "", "", "", _summary_metrics()),
+        ]
+        summary = summarize(rows)
+        self.assertEqual(summary["false_grounded_acceptance_rate"], 0.0)
+        self.assertEqual(summary["false_rejection_rate"], 0.0)
+
+    def test_false_decision_rates_handle_mixed_results(self):
+        rows = [
+            CaseResult("r1", "grounding", "grounded_or_reject", "reject", "grounded", False, 0, "", "", "", _summary_metrics()),
+            CaseResult("r2", "grounding", "grounded_or_reject", "reject", "reject", True, 0, "", "", "", _summary_metrics()),
+            CaseResult("r3", "failure", "grounded_or_reject", "reject", "fallback", False, 0, "", "", "", _summary_metrics()),
+            CaseResult("g1", "grounding", "grounded_or_reject", "grounded", "grounded", True, 0, "", "", "", _summary_metrics()),
+            CaseResult("g2", "grounding", "grounded_or_reject", "grounded", "reject", False, 0, "", "", "", _summary_metrics()),
+            CaseResult("b1", "decision", "canned_or_brief", "brief", "canned", False, 0, "", "", "", _summary_metrics()),
+        ]
+        summary = summarize(rows)
+        self.assertEqual(summary["false_grounded_acceptance"], 1)
+        self.assertAlmostEqual(summary["false_grounded_acceptance_rate"], 1 / 3)
+        self.assertEqual(summary["false_rejection"], 1)
+        self.assertEqual(summary["false_rejection_rate"], 0.5)
 
     def test_empty_briefing_is_malformed_but_expected_fallback_passes(self):
         case = _case(expected="fallback", category="failure", fake={"text": ""})

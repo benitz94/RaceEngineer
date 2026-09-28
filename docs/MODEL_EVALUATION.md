@@ -29,10 +29,15 @@ by a fixture:
 - backend latency when the backend reports it.
 
 The aggregate report includes total, passed, failed, accuracy, false grounded
-acceptances, false rejections, hallucination failures, style failures, and
-malformed-output failures. Briefing case details retain sentence count, word
-count, forbidden-token violations, unsupported claims, unsupported numbers,
-and fallback use.
+acceptances, false rejections, their denominator-specific rates,
+hallucination failures, style failures, and malformed-output failures.
+`false_grounded_acceptance_rate` divides false grounded acceptances by all
+cases whose expected label is `reject`. `false_rejection_rate` divides false
+rejections by all cases whose expected label is `grounded`. Either rate is
+`0.0` when its denominator is zero. The existing count fields remain alongside
+the rates. Briefing case details retain sentence count, word count,
+forbidden-token violations, unsupported claims, unsupported numbers, and
+fallback use.
 
 These are bounded checks, not a general semantic judge. Passing does not prove
 that a model is safe, fluent in every Italian register, suitable for every
@@ -103,10 +108,14 @@ python3 tools/eval_models.py \
   --output-csv model-eval.csv
 ```
 
-`--ollama-url` can select another explicitly local endpoint. If the server or
-model is unavailable, the command prints a clear diagnostic, records backend
-errors, starts no download, and returns a nonzero status when no case received
-a model answer.
+`--ollama-url` can select another loopback HTTP origin. Accepted hosts are
+`localhost`, an address in `127.0.0.0/8`, or IPv6 `::1`. Public hosts, LAN
+addresses, HTTPS, missing hosts, embedded credentials, and URLs with paths,
+queries, or fragments are rejected before any request. Current project
+documentation requires local inference and does not declare LAN-hosted model
+serving. If the server or model is unavailable, the command prints a clear
+diagnostic, records backend errors, starts no download, and returns a nonzero
+status when no case received a model answer.
 
 The harness sends briefing facts or a bounded decision question and requests
 temperature zero. This improves repeatability but does not guarantee identical
