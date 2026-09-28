@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-09-25
+Last updated: 2026-09-27
 
 ## Current State
 
@@ -47,6 +47,9 @@ Runtime and offline tests use only the Python standard library. Python 3.10 or
 newer is required. Run instructions and recording semantics are documented in
 `docs/DATA_RECOVERY.md`. Expose `src/raceengineer` through `PYTHONPATH` when
 running from this tree.
+
+An offline GitHub Actions regression workflow validates the supported Ubuntu
+and Windows Python/OS matrix.
 
 The public repository is `benitz94/RaceEngineer`. English is the official
 repository language. The public license is GPL-3.0-only; external contributions
