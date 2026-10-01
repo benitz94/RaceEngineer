@@ -13,28 +13,19 @@ Its goal is to receive telemetry from a simulator, analyze it using
 deterministic logic, and provide the driver with useful information during and
 after the session.
 
-## Current blocker
+## Current models
 
-The intended platform cannot be started until two local models are chosen:
+The two local models are chosen. Details and the measured VRAM floor are in
+`docs/MODEL_SELECTION.md`.
 
-1. the language model that writes short radio briefings;
-2. the typed decision model that sits beside that language model and answers
-   only bounded questions (speak or hold, canned text or briefing, grounded or
-   reject).
+1. Language model for short radio briefings: `qwen3.5:4b` (Q4_K_M, Apache-2.0).
+2. Typed decision model: `qwen3.5:0.8b` (Q8_0, Apache-2.0), constrained to
+   declared labels only. If the grammar fails or the call times out, rules
+   keep the radio.
 
-Both models must be free to obtain and run locally. Paid weights and paid
-cloud APIs are not acceptable. See `docs/DECISION_MODEL.md`.
-
-Those two choices determine how much VRAM is required and therefore which GPU
-to buy. An AMD Radeon is the expected family. The exact card is unknown until
-the models are known.
-
-Without that knowledge the project cannot be sized, installed, or built for
-the intended Linux machine.
-
-If you want to help, start here: propose free candidate models, their VRAM
-footprints, and whether both can run together on one AMD Radeon. Other feature
-work waits on this decision.
+Product VRAM floor: 8 GB minimum, 12 GB recommended. The expected GPU family
+is still an AMD Radeon. The exact card is not chosen. NVIDIA development
+traces are not Radeon qualification.
 
 ## Project Status
 
@@ -47,7 +38,7 @@ yet a definitive requirement. The availability, format, stability, and terms
 of use of its telemetry must first be technically evaluated.
 
 A small recovery slice already exists for offline experiments. It does not
-replace the model and hardware decision above.
+replace simulator integration or the hardware purchase.
 
 ## Initial Technology
 
@@ -98,11 +89,10 @@ functionality.
 
 ### Models and hardware first
 
-The language model and the typed decision model are not optional unknowns.
-They must be free, local, and chosen before the target machine is specified.
-Critical race alerts may still be produced by deterministic rules, but the
-intended product includes those local models and cannot be built until their
-VRAM cost is known.
+The language model and the typed decision model are selected. See
+`docs/MODEL_SELECTION.md`. Critical race alerts remain in deterministic rules.
+The intended product still needs a GPU that can hold both models: 8 GB
+minimum, 12 GB recommended.
 
 ### Performance First
 
@@ -129,8 +119,7 @@ not introduce simulator-specific logic into the core.
 ### Hardware Independence
 
 The reference platform is a Linux machine with an AMD Radeon GPU. The exact
-card depends on the VRAM required by the chosen models. The architecture must
-not hard-code a single SKU.
+card is not chosen. The architecture must not hard-code a single SKU.
 
 The hardware may evolve based on real-world performance measurements and
 needs.
@@ -167,9 +156,6 @@ The first prototype will be a minimal local pipeline:
 7. when available, play the same alert through local TTS;
 8. record events, alerts, and diagnostic data.
 
-The intended platform still requires the free language model and free typed
-decision model before hardware is purchased and the full system is built.
-
 The prototype will not initially include:
 
 - speech recognition;
@@ -182,21 +168,17 @@ The prototype will not initially include:
 
 ## Planned Initial Hardware
 
-Do not buy a GPU yet.
-
-Initial test bench, after the models are chosen:
+Do not buy a GPU until the exact Radeon SKU is chosen. The floor is known:
 
 - a Linux workstation or mini PC;
-- an AMD Radeon GPU with enough VRAM for the language model and the typed
-  decision model together;
+- an AMD Radeon with at least 8 GB VRAM, 12 GB recommended, for
+  `qwen3.5:4b` and `qwen3.5:0.8b` together;
 - Ethernet or Wi-Fi connection;
 - USB lavalier microphone, not required for the first prototype;
 - local audio output (DAC, mixer, and headphones as needed).
 
-Raspberry Pi is not a target platform.
-
-Component models, alternatives, requirements, and configuration will be
-documented after the models are selected.
+Raspberry Pi is not a target platform. A 6 GB development card is not the
+product host.
 
 ## Documentation
 
@@ -204,7 +186,8 @@ documented after the models are selected.
 - `ARCHITECTURE.md`: system components, boundaries, and flows;
 - `ROADMAP.md`: development phases and completion criteria;
 - `AGENTS.md`: operating rules for repository contributors;
-- `docs/DECISION_MODEL.md`: planned typed decision model beside the LLM;
+- `docs/DECISION_MODEL.md`: typed decision model beside the LLM;
+- `docs/MODEL_SELECTION.md`: selected pair, license, measured VRAM floor;
 - `docs/DATA_RECOVERY.md`: current demo and recording format.
 
 `PROJECT_JOURNAL.md` is the primary source for the project's intent and
