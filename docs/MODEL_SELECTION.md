@@ -1,6 +1,6 @@
 # Model selection
 
-Status: selected pair, 2026-10-01. Not an AMD qualification.
+Status: selected pair, 2026-10-01. Chosen to fit the development RTX 3050 with 6 GB. Not an AMD qualification.
 
 ## Selected pair
 
@@ -10,6 +10,8 @@ Status: selected pair, 2026-10-01. Not an AMD qualification.
 | Typed decision model | `qwen3.5:0.8b` | Q8_0, about 1.0 GB on disk, 873M parameters | Apache-2.0 |
 
 Both checkpoints are free to obtain and run locally. Paid weights and paid cloud APIs remain out of scope. Apache-2.0 weights may be used beside GPL-3.0-only project code; they do not relicense RaceEngineer.
+
+This pair was selected because it is the combination that still fits on the development NVIDIA GeForce RTX 3050 (6144 MiB). Two 4B checkpoints do not fit on that card. It is the best pair for that 6 GB bench, not a claim that these are the best models on a larger GPU.
 
 The 0.8B model is a constrained classifier only (GBNF or a JSON enum of the declared labels). Unconstrained briefing from the 0.8B is not acceptable. If the grammar constraint fails or the call times out, the session falls back to deterministic rules and the rule radio sentence. See `docs/DECISION_MODEL.md`.
 
