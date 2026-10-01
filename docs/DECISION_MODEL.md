@@ -1,9 +1,10 @@
 # Typed decision model
 
-Status: the neural model is planned and not implemented. This document records intent.
+Status: neural weights selected, grammar path not implemented. The first slice remains deterministic code in `src/raceengineer/decision.py`.
 
-The first slice is deterministic code in `src/raceengineer/decision.py`, not a neural decision model.
-It answers only `canned_or_brief` and `grounded_or_reject`. `--brief` stands in for the brief skill.
+Selected decision checkpoint: `qwen3.5:0.8b` (Q8_0, Apache-2.0), used only as a constrained classifier (GBNF or a JSON enum of the declared labels). Unconstrained text from this checkpoint is not a radio path. If the grammar fails or the call times out, fall back to deterministic rules and the rule radio sentence. The briefing model remains `qwen3.5:4b`. See `docs/MODEL_SELECTION.md`.
+
+It answers only `canned_or_brief` and `grounded_or_reject` in the current code. `--brief` stands in for the brief skill.
 A `reject` label drops the llm radio line. The rule radio stays.
 
 RaceEngineer will use two local inference roles. They are not the same
@@ -17,9 +18,10 @@ component.
    already has its sentence; that sentence is the radio call.
 2. A **typed decision model** is a control layer. It answers bounded questions
    with labels and optional probabilities. It does not generate radio speech.
+   Selected weights: `qwen3.5:0.8b`, constrained output only.
 3. A **language model** may write a short briefing only after a declared skill
-   has answered `brief` on a task where a briefing is allowed. Current
-   evaluation candidate: `qwen3.5:4b`. It must stay disableable.
+   has answered `brief` on a task where a briefing is allowed. Selected
+   briefing model: `qwen3.5:4b`. It must stay disableable.
    The phrase list in `docs/RADIO_PHRASES.md` is training material, not a
    closed output set.
 
@@ -57,17 +59,16 @@ A local check of `qwen3.5:4b` on fuel 10.0 / `fuel_low` returned in 0.98 s and
 invented a corner. Speed without a declared skill is not a radio path. The
 rule sentence "Fuel low. Box this lap." was already the control.
 
-If the decision model is missing or times out, the session continues with
-rules. The language model continues only for a briefing that was already
-approved. The session does not block.
+If the decision model is missing, the grammar constraint fails, or the call
+times out, the session continues with rules. The language model continues only
+for a briefing that was already approved. The session does not block.
 
 ## Constraints
 
-- Free weights only. Local inference only.
+- Free weights only. Local inference only. Apache-2.0 for the selected pair.
 - Offline session operation must keep working if this model is absent.
-- Prefer a small checkpoint that can share a GPU with a 4B-class language
-  model. A dedicated 0.8B–4B decision checkpoint is acceptable if it fits
-  the same card.
+- The 0.8B checkpoint shares a GPU with `qwen3.5:4b`. Product floor is 8 GB
+  VRAM minimum and 12 GB recommended. A 6 GB card is a development bench only.
 - Do not route fuel, validity, or hysteresis through this model.
 - Do not import product architecture from other private repositories.
 
