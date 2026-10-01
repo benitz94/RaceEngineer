@@ -1,5 +1,25 @@
 # PROJECT_JOURNAL.md
 
+## Model Selection — 2026-10-01
+
+Decision:
+
+Briefings use qwen3.5:4b (Q4_K_M, Apache-2.0). The typed decision model is
+qwen3.5:0.8b (Q8_0, Apache-2.0), a constrained classifier only. Both are local
+and free. A grammar constraint is required. If the grammar fails or the call
+times out, deterministic rules keep the radio. Measured cohabitation on the
+RTX 3050 6 GB bench, both resident with keep_alive: 5729 MiB used, 274 MiB
+free. The 1.7B pair used 5905 MiB and left 98 MiB free. Product floor is 8 GB
+VRAM minimum and 12 GB recommended. The expected family is an AMD Radeon. The
+exact SKU is not chosen.
+
+Reason:
+
+This is the pair that fits the 6 GB development bench. Two 4B checkpoints do
+not. The 0.8B is usable only as a label classifier under GBNF or a JSON enum.
+NVIDIA measurements are not Radeon qualification. Details are in
+docs/MODEL_SELECTION.md.
+
 ## Decision Model Intervenes by Skill — 2026-09-23
 
 Decision:
@@ -350,6 +370,7 @@ This section will be updated during development.
 Planned initial configuration:
 
 -   Raspberry Pi 3B+ (initial platform)
+// Later decision: Raspberry Pi is not the RaceEngineer runtime target. See README.
 -   Power supply
 -   microSD card (capacity and class to be determined)
 -   Wi-Fi or Ethernet connection
