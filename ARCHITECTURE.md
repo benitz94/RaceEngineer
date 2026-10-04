@@ -150,7 +150,10 @@ It must support at least:
 - repeatability of the same test.
 
 Current file replay preserves order and timestamps with a controlled delivery
-rate and Ctrl+C stop. Pause remains unimplemented.
+rate and Ctrl+C stop. Pause and resume are programmatic through
+`ReplaySession.pause` and `ReplaySession.resume` in
+`src/raceengineer/sources.py`. The demo has no `--pause` or `--resume`
+flag.
 
 ### Real Telemetry
 

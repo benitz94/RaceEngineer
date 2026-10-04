@@ -18,7 +18,10 @@ recording.jsonl` to capture UTF-8 instead of its default UTF-16 redirection.
 
 Synthetic output defaults to 20 samples at 10 Hz. `--count` changes its length;
 `--rate` controls synthetic and file delivery. Replay runs to end of file.
-Ctrl+C stops replay or UDP. UDP optionally stops after `--count` datagrams;
+Ctrl+C stops replay or UDP. Pause and resume are programmatic:
+`ReplaySession.pause` and `ReplaySession.resume` in
+`src/raceengineer/sources.py`. The demo has no `--pause` or `--resume`
+flag. UDP optionally stops after `--count` datagrams;
 `--host` selects the bind address.
 
 ## Fuel Rule and Alerts

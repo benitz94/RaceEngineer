@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-10-03
+Last updated: 2026-10-04
 
 ## Current State
 
@@ -21,8 +21,10 @@ measurements are development evidence only and do not qualify Radeon. See
 
 A small simulator-independent recovery slice already exists in Python: a
 nullable sample model, repeatable synthetic source, versioned JSONL recording
-and file replay, text CLI output, an optional UDP metadata probe, and a
-deterministic low-fuel rule. A `fuel_low` alert also prints a versioned radio
+and file replay, programmatic replay pause and resume
+(`ReplaySession.pause`/`resume` in `src/raceengineer/sources.py`; the demo
+has no `--pause` or `--resume` flag), text CLI output, an optional UDP
+metadata probe, and a deterministic low-fuel rule. A `fuel_low` alert also prints a versioned radio
 line (`raceengineer.radio` version 1, `source: rule`) whose driver text is
 "Box, box. Questo giro." The alert log message stays English.
 `--speak` says each printed radio line with local Piper Italian when the

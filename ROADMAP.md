@@ -105,13 +105,18 @@ Goal: test the core with realistic, reproducible sequences without connecting
 a simulator.
 
 Current coverage: version 1 JSONL recordings and file replay exist, preserving
-order and timestamps with controlled delivery rate and Ctrl+C stop. Replay
-pause, processing/stability measurements, and full phase validation remain open.
+order and timestamps with controlled delivery rate and Ctrl+C stop.
+Programmatic pause and resume are available through `ReplaySession.pause`
+and `ReplaySession.resume` in `src/raceengineer/sources.py`. The demo has
+no `--pause` or `--resume` flag. Processing/stability measurements and
+full phase validation remain open.
 
 Activities:
 
 - define a local, versioned recording format;
-- implement replay start, pause, stop, and speed control;
+- implement replay start, pause, stop, and speed control (pause and resume
+  are programmatic: `ReplaySession.pause`/`resume` in
+  `src/raceengineer/sources.py`; the demo has no `--pause` or `--resume`);
 - preserve timestamps and source information;
 - handle duplicate, missing, or out-of-order samples;
 - measure processing times and stability;
