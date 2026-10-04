@@ -69,14 +69,16 @@ A reply that names fields, timestamps, or other log wording is dropped, and
 stderr says `brief rejected`. The rule radio stays.
 
 `--speak` says each printed radio line, the rule line first and the llm line
-when that line is printed. It uses local Piper with an `it_IT` voice when
-`piper` is on `PATH` or under the cache below, and otherwise Windows
+when that line is printed. It uses local Piper when the selected `it_IT` voice
+and its matching `.onnx.json` are installed and `piper` is on `PATH` or under
+the cache below. If Piper or the selected voice is missing, it uses Windows
 System.Speech. The first fallback prints one stderr line: `piper unavailable,
 using SAPI`. If speech fails, the radio JSON is still printed and an error is
 written to stderr. `--speak` does nothing when no radio line is produced.
 
 Piper and the voice stay outside git, in `%LOCALAPPDATA%\RaceEngineer\piper`
-(`it_IT-paola-medium.onnx` plus the matching `.onnx.json`). Two setup commands:
+(`it_IT-paola-medium.onnx` plus the matching `.onnx.json`). The following
+legacy setup example is for Paola; select it with `--speak --voice paola`:
 
 ```powershell
 $dest = Join-Path $env:LOCALAPPDATA "RaceEngineer\piper"
@@ -89,12 +91,17 @@ curl.exe -L --fail -o "$dest\it_IT-paola-medium.onnx.json" "https://huggingface.
 
 If Paola is unavailable, the same two steps with Riccardo from
 `https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/riccardo/x_low/it_IT-riccardo-x_low.onnx`
-and its `.onnx.json`. Skip the download when `piper.exe` and an `it_IT` model
+and its `.onnx.json`, then select `--speak --voice riccardo`. Skip the download
+when `piper.exe` and the selected `it_IT` model with its matching config
 are already in that folder. Riccardo has no medium file in that set; use
 `it_IT-riccardo-x_low.onnx` and its `.onnx.json` from
 `https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/riccardo/x_low/`.
 
 `--voice paola`, `riccardo`, `serena`, or `dii` selects which installed Piper file speaks. The default spoken voice is Serena (`it_IT-serena-high`). Dii remains available locally and is not the official project voice (CC BY-NC-SA).
+Installing Paola or Riccardo does not install the default Serena voice.
+The legacy 2023 Piper binary above does not establish Serena-high support;
+high voices require a compatible Piper binary. This example does not qualify
+a Serena-high setup or Linux playback.
 That flag is a Voice Profile stand-in: it changes only the sound of the radio.
 Engineer Profiles, which would carry attitude and verbosity, are a separate
 layer and are not implemented in this slice. See `PROJECT_JOURNAL.md`,

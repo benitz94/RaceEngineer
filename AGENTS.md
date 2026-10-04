@@ -27,6 +27,20 @@ roadmap, and finally the operating rules.
 6. Do not record file-level change details in `PROJECT_JOURNAL.md`, because Git
    preserves the technical history.
 
+## Orchestrated Multi-Agent Development
+
+After the session-start reads above, use these documents for orchestrated
+multi-agent development:
+
+- [Working domain](docs/agents/domain.md) — RaceEngineer invariants and boundaries.
+- [Orchestration](docs/agents/orchestration.md) — roles, NPC, approvals, and evidence gates.
+- [Issue tracker](docs/agents/issue-tracker.md) — bounded tickets and publication approval.
+- [Triage labels](docs/agents/triage-labels.md) — proposed label taxonomy only.
+
+These documents extend existing governance. The project rules in this file
+take precedence over conflicting generic orchestration guidance;
+`PROJECT_JOURNAL.md` remains authoritative for project intent and decisions.
+
 ## Repository Language
 
 The official language of this repository is English.

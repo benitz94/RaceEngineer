@@ -4,8 +4,10 @@
 
 This architecture describes the project's initial direction.
 
-File formats, the real telemetry protocol, and specific libraries have not yet
-been selected.
+The recovery prototype implements version 1 sample JSONL recordings and
+structured alert/radio output using the Python standard library. See
+`docs/DATA_RECOVERY.md`. The real simulator protocol and production formats
+beyond this slice remain unselected.
 
 Gran Turismo 7 is a candidate for technical evaluation and is not yet an
 architectural dependency.
@@ -147,6 +149,9 @@ It must support at least:
 - controllable replay speed;
 - repeatability of the same test.
 
+Current file replay preserves order and timestamps with a controlled delivery
+rate and Ctrl+C stop. Pause remains unimplemented.
+
 ### Real Telemetry
 
 Receives data over the local network from the simulator or console.
@@ -227,6 +232,9 @@ It is first represented as a structured event or alert containing at least:
 - predefined message or message identifier;
 - delivery status.
 
+The prototype alert carries the other listed data but has no delivery status
+yet; delivery status remains an architectural requirement.
+
 This separation allows the same alert to be used for logs, text, audio, or
 future interfaces.
 
@@ -246,7 +254,10 @@ Records events, alerts, errors, and diagnostic metrics.
 
 Converts approved messages into audio without requiring cloud services.
 
-The TTS engine has not yet been selected.
+The prototype uses Piper when the selected Italian voice and matching config
+are installed, with Windows SAPI fallback when Piper or that voice is missing.
+Serena is the default voice. WAV playback currently uses Windows PowerShell;
+Linux production speech/playback qualification remains open.
 
 A TTS failure must not stop telemetry reception or analysis.
 
@@ -282,6 +293,9 @@ The LLM interface must:
 - clearly distinguish deterministic content from generated content;
 - not make a cloud connection mandatory.
 
+The demo's briefing and speech calls are synchronous. Asynchronous isolation
+needed to meet the nonblocking requirements is not yet implemented.
+
 ## Error Handling
 
 The system must degrade gracefully.
@@ -297,7 +311,11 @@ Examples:
 
 ## Performance
 
-A Linux machine with an AMD Radeon GPU is the initial test bench.
+The measured development bench is Windows with an RTX 3050 6 GB. The intended
+reference platform is Linux with an AMD Radeon; the exact SKU and final machine
+configuration remain unresolved. Product VRAM guidance is 8 GB minimum and
+12 GB recommended. Windows/NVIDIA measurements do not qualify Radeon. See
+`docs/MODEL_SELECTION.md`.
 
 Core validation on the reference Linux machine must occur before selecting
 and implementing the adapter for the first real simulator.
