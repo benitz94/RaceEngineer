@@ -27,18 +27,19 @@ Responsiveness must not be sacrificed for nonessential features.
 
 ## Gate — Local models and GPU VRAM
 
-Before the intended Linux platform can be specified or built, the project must
-choose:
+Local model selection is established:
 
-1. the local language model for short radio briefings;
-2. the local typed decision model that sits beside that language model and
-   answers bounded questions only.
+1. `qwen3.5:4b` (Q4_K_M) for short radio briefings;
+2. `qwen3.5:0.8b` (Q8_0) for constrained typed classification only.
 
 Both models must be free to obtain and run locally. Paid weights and paid
 cloud APIs are not acceptable. See `docs/DECISION_MODEL.md`.
 
-Those choices determine VRAM and the AMD Radeon card. Later roadmap phases
-that assume a target machine wait on this gate.
+The documented product VRAM floor is established: 8 GB minimum, 12 GB
+recommended. See `docs/MODEL_SELECTION.md`. Windows/RTX 3050 measurements are
+development evidence only. The exact AMD Radeon SKU, Radeon qualification,
+and final reference-machine configuration remain unresolved. Later phases
+that assume a target machine still depend on this hardware/platform work.
 
 ## Phase 0 — Project Documentation and Foundations
 
@@ -52,9 +53,10 @@ Activities:
 - select and add an open-source license (GPL-3.0-only and CLA; done);
 - define the process for documenting decisions;
 - define the minimum requirements for the first prototype;
-- define the initial Python project structure;
-- choose a free language model and a free typed decision model;
-- derive VRAM and AMD Radeon requirements from those models;
+- define the initial Python project structure (prototype structure exists);
+- choose a free language model and a free typed decision model (selected);
+- derive VRAM and AMD Radeon requirements from those models (VRAM guidance
+  established; Radeon qualification remains open);
 - document the available hardware configuration after that choice.
 
 Completion criteria:
@@ -73,6 +75,10 @@ Completion criteria:
 ## Phase 1 — Deterministic Pipeline with Synthetic Telemetry
 
 Goal: demonstrate the complete flow without a real simulator.
+
+Current coverage: the recovery slice has a nullable sample schema, synthetic
+source, minimum session state, deterministic low-fuel rule, structured alerts,
+and text output. This does not establish completion of the whole phase.
 
 Activities:
 
@@ -98,6 +104,10 @@ Completion criteria:
 Goal: test the core with realistic, reproducible sequences without connecting
 a simulator.
 
+Current coverage: version 1 JSONL recordings and file replay exist, preserving
+order and timestamps with controlled delivery rate and Ctrl+C stop. Replay
+pause, processing/stability measurements, and full phase validation remain open.
+
 Activities:
 
 - define a local, versioned recording format;
@@ -118,6 +128,12 @@ Completion criteria:
 ## Phase 3 — Local Voice Output
 
 Goal: deliver alerts to the driver without mandatory cloud services.
+
+Current coverage: the prototype speech adapter uses Piper with a selected
+installed Italian voice (Serena by default), with Windows SAPI fallback.
+Playback is Windows-specific. Linux qualification, queuing, output-device
+validation, and latency/resource measurements remain open; the phase is not
+complete.
 
 Activities:
 
@@ -256,20 +272,20 @@ These items represent future possibilities, not already approved requirements.
 
 ## Decisions Still Required
 
-The following must be decided before the intended platform can be built:
+The selected pair and product VRAM guidance are established. The prototype
+already has a Python structure, standard-library runtime, internal sample
+schema, version 1 recording format, low-fuel rule, and local speech path.
+These do not finalize production formats or qualify the Linux platform.
 
-- the free local language model;
-- the free local typed decision model that sits beside it;
-- VRAM required to run both models together;
-- the AMD Radeon card that meets that VRAM need;
-- Python runtime environment;
-- initial operating system;
-- initial project structure;
-- initial libraries;
-- internal telemetry schema;
-- recording format;
-- first prototype rule;
-- local TTS engine;
+The following decisions and qualification work remain open:
+
+- exact AMD Radeon SKU and qualification of the selected pair;
+- final reference-machine configuration;
+- Python runtime environment on the reference machine;
+- initial Linux distribution;
+- any additional production libraries, with documented rationale;
+- production telemetry schema and persistence formats beyond the current slice;
+- Linux speech/playback qualification;
 - quantitative performance criteria;
 - initial simulator following technical evaluation;
 - final distribution method.

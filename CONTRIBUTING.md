@@ -11,22 +11,23 @@ in English.
 
 ## Current work that helps
 
-The project is blocked until these are chosen:
+The two local models are selected:
 
-1. the local language model that writes short radio briefings;
-2. the local typed decision model that sits beside it and answers only
-   bounded questions (speak or hold, canned text or briefing, grounded
-   or reject).
+1. `qwen3.5:4b` (Q4_K_M) for short radio briefings;
+2. `qwen3.5:0.8b` (Q8_0) for constrained typed classification only.
 
 Both models must be free to obtain and run locally. Paid weights and
 paid cloud APIs are not acceptable.
 
-Those choices set VRAM and the AMD Radeon card. The intended Linux
-machine cannot be specified or built before that.
+Product VRAM guidance is 8 GB minimum and 12 GB recommended. See
+`docs/MODEL_SELECTION.md`. The exact Radeon SKU, Radeon qualification,
+and final Linux reference-machine configuration remain open. Windows/RTX
+3050 measurements are development evidence only and do not qualify Radeon.
 
-Helpful contributions right now are free model proposals with VRAM
-figures and whether both models can run on one GPU. Unrelated feature
-work should wait.
+Helpful contributions right now are reproducible Linux/Radeon compatibility,
+co-residency, VRAM, and performance evidence for the selected pair, with the
+hardware and runtime named. The neural grammar path remains unimplemented;
+current decisions use deterministic code. Unrelated feature work should wait.
 
 ## License
 
