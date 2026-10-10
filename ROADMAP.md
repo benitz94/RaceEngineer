@@ -294,3 +294,24 @@ The following decisions and qualification work remain open:
 - quantitative performance criteria;
 - initial simulator following technical evaluation;
 - final distribution method.
+
+## Phase 5 Preparatory Field Test — PS5 LAN Telemetry (not yet executed)
+
+A 2026-10-10 read-only survey found community GT7 UDP heartbeat/decryption
+references and officially documented F1 UDP output. Both games are available
+to the owner on PS5; the exact installed F1 edition is still to be recorded.
+The reproducible Windows/PowerShell receive-first procedure is in
+`docs/PS5_TELEMETRY_FIELD_TEST.md`. Test F1 transport first, then GT7 with
+a reviewed heartbeat-enabled decoder. Confirm packet source/count and,
+separately, plausible decoded values against the in-game HUD. Windows evidence
+is exploratory only and does not replace Linux reference-machine validation.
+This does not approve a simulator adapter or change Phase 4/5 gates.
+
+## Future Interaction and Strategy Research (unimplemented)
+
+Investigate a bidirectional driver/engineer workflow after telemetry evidence:
+voice or text intent parsing; explicit driver override and pit-plan updates;
+comparisons of tyre compounds and push/hold strategies using a deterministic
+strategy model; contextual driving feedback; event-driven re-planning; grounded
+radio output with priorities, confidence and nonblocking execution. These are
+research targets, not commitments or claims of implemented capabilities.
