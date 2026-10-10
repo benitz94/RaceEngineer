@@ -238,3 +238,19 @@ of the CLA.
 This copyright license does not authorize use of third-party simulator
 brands, telemetry protocols, or assets beyond what those third parties
 allow.
+
+## PS5 Telemetry Field Tests (proposed)
+
+The owner has both Gran Turismo 7 and an F1 title on PS5. A documented,
+receive-only Windows/PowerShell LAN experiment is available in
+[`docs/PS5_TELEMETRY_FIELD_TEST.md`](docs/PS5_TELEMETRY_FIELD_TEST.md).
+Start with F1's configurable UDP output, then evaluate GT7's community
+heartbeat/decryption path. Neither test has been physically performed or
+constitutes an approved simulator adapter. Linux validation remains open.
+
+The long-term product vision also includes a **bidirectional driver/engineer**
+loop: questions about pit timing, tyre compounds and push/hold decisions,
+plus grounded driving feedback and re-planning when race conditions change.
+This is a future direction, not current prototype capability. Strategy must
+be calculated from observable data and explicit assumptions; models must not
+invent missing telemetry or override deterministic safety/critical alerts.
