@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-10-04
+Last updated: 2026-10-10
 
 ## Current State
 
@@ -76,3 +76,23 @@ unrelated feature work.
 6. `docs/DATA_RECOVERY.md` — current demo and recording format.
 7. `docs/DECISION_MODEL.md` — planned typed decision model beside the LLM.
 8. `docs/RADIO_PHRASES.md` — pit-wall phrase book for language-model training.
+
+## 2026-10-10 — PS5 telemetry research and future interaction scope
+
+The owner confirmed access to both GT7 and an F1 game on PS5 (exact F1 edition
+not yet identified). A read-only technical report surveyed F1's documented UDP
+telemetry and GT7's community heartbeat/encrypted UDP path. No PS5 packet
+capture has been performed. `docs/PS5_TELEMETRY_FIELD_TEST.md` now records
+a Windows PowerShell transport experiment, decoder follow-up, and evidence
+checklist. This is preparatory Phase 5 research, not simulator adoption or
+Linux/AMD qualification.
+
+Product vision clarified in discussion: beyond one-way rule-to-radio output,
+the driver should eventually be able to reject a pit instruction, ask whether
+to push or hold, and compare soft versus medium tyres. An engineer should
+re-evaluate plans after new race events and give data-grounded driving advice.
+These require unimplemented input recognition, session state, strategy and
+performance models, memory, explicit driver authority, confidence handling,
+and nonblocking orchestration. No training from scratch is assumed; the
+existing selected local models remain unchanged. This does not supersede the
+current hardware qualification priority or phase gates.
