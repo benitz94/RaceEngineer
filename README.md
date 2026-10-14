@@ -40,6 +40,22 @@ of use of its telemetry must first be technically evaluated.
 A small recovery slice already exists for offline experiments. It does not
 replace simulator integration or the hardware purchase.
 
+## Releases
+
+Each push to `main` that passes the complete `Offline tests` workflow publishes
+a new GitHub Release for the tested commit, with automatically generated notes.
+The first version is `v0.1.0`; subsequent releases increment the patch number
+of the highest existing `vMAJOR.MINOR.PATCH` tag. Pull requests and failed or
+cancelled test runs do not publish releases. Re-running tests for a commit
+that already has a release does not create another version. If a version tag
+exists without its release, the workflow publishes that existing tag instead.
+
+Release publication is serialized, with up to 100 pending runs queued by
+GitHub Actions. Versions follow publication order, which can differ from push
+order when test runs finish at different times. Existing releases are retained.
+These releases are development snapshots; their version numbers do not establish
+simulator support or Linux/AMD hardware qualification.
+
 ## Initial Technology
 
 The project's initial language is Python.

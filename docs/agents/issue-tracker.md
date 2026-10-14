@@ -1,7 +1,6 @@
 # Bounded tasks and Issue publication
 
-This policy extends [AGENTS.md](../../AGENTS.md) and
-[orchestration.md](orchestration.md). It defines ticket preparation and
+This policy extends [AGENTS.md](../../AGENTS.md). It defines ticket preparation and
 evidence, not permission to create GitHub Issues.
 
 ## When to use an Issue

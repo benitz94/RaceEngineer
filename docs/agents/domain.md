@@ -57,4 +57,4 @@ and usage already included in existing subscriptions are allowed. Paid APIs,
 pay-as-you-go usage, extra credits, new paid services, and new subscriptions
 are prohibited. If additional cost is possible or coverage is uncertain,
 stop and report it. Subscription access does not authorize escalation or
-external actions; follow [orchestration.md](orchestration.md).
+external actions; follow [AGENTS.md](../../AGENTS.md).

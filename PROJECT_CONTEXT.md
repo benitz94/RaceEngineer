@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-10-14
+Last updated: 2026-10-15
 
 ## Current State
 
@@ -52,6 +52,14 @@ running from this tree.
 
 An offline GitHub Actions regression workflow validates the supported Ubuntu
 and Windows Python/OS matrix.
+
+Automatic development releases are configured for `main`.
+After the complete offline test workflow succeeds for a push, it publishes a
+GitHub Release for that tested commit with generated notes, starting at
+`v0.1.0` and incrementing the patch number thereafter. Pull requests and failed
+tests cannot publish releases. Existing releases are retained, and re-runs do
+not create another version for an already released commit. These are development
+snapshots, not hardware qualification or simulator-support declarations.
 
 The public repository is `benitz94/RaceEngineer`. English is the official
 repository language. The public license is GPL-3.0-only; external contributions

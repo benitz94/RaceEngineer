@@ -4,7 +4,7 @@ This is a proposed taxonomy only. No GitHub labels are created or changed by
 this document. Before any approved label publication, inspect existing labels
 and reuse equivalent names where possible rather than duplicating them.
 Follow [issue-tracker.md](issue-tracker.md) for ticket approval and
-[orchestration.md](orchestration.md) for external-action control.
+[AGENTS.md](../../AGENTS.md) for external-action control.
 
 | Category | Proposed labels | Use |
 | --- | --- | --- |

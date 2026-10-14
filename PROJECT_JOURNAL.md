@@ -1,5 +1,22 @@
 # PROJECT_JOURNAL.md
 
+## Automatic Development Releases — 2026-10-15
+
+Decision:
+
+Each push to `main` that passes the complete offline test workflow generates
+a new GitHub Release for the tested commit, with automatically generated notes.
+Versions start at `v0.1.0` and increment the patch number of the highest existing
+stable version tag. Existing releases are retained, and repeating a successful
+test run does not create another version for an already released commit.
+
+Reason:
+
+Development progress should produce traceable snapshots automatically, while
+requiring the existing offline checks to pass before publication. Release
+numbers do not imply a usable initial product, simulator adoption, or
+Linux/AMD Radeon qualification.
+
 ## Repository Independence — 2026-10-14
 
 Decision:

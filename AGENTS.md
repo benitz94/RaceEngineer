@@ -33,7 +33,6 @@ After the session-start reads above, use these documents for orchestrated
 multi-agent development:
 
 - [Working domain](docs/agents/domain.md) — RaceEngineer invariants and boundaries.
-- [Orchestration](docs/agents/orchestration.md) — roles, NPC, approvals, and evidence gates.
 - [Issue tracker](docs/agents/issue-tracker.md) — bounded tickets and publication approval.
 - [Triage labels](docs/agents/triage-labels.md) — proposed label taxonomy only.
 
