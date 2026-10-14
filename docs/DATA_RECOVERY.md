@@ -1,0 +1,135 @@
+# Data Recovery Demo
+
+Python 3.10 or newer is required. Runtime and tests use only the standard library.
+From the repository root in PowerShell:
+
+```powershell
+$env:PYTHONPATH = "$PWD/src"
+python -m raceengineer.demo --source synthetic
+python -m raceengineer.demo --source synthetic --samples-only > recording.jsonl
+python -m raceengineer.demo --source file recording.jsonl
+python -m raceengineer.demo --source udp --port 33740
+python -m unittest discover -s tests -v
+```
+
+On POSIX, first use `export PYTHONPATH="$PWD/src"`. In Windows PowerShell 5,
+use `python -m raceengineer.demo --source synthetic --samples-only | Set-Content -Encoding utf8
+recording.jsonl` to capture UTF-8 instead of its default UTF-16 redirection.
+
+Synthetic output defaults to 20 samples at 10 Hz. `--count` changes its length;
+`--rate` controls synthetic and file delivery. Replay runs to end of file.
+Ctrl+C is a process stop for the demo (replay or UDP). Pause, resume, and stop
+are programmatic: `ReplaySession.pause`, `ReplaySession.resume`, and
+`ReplaySession.stop` in `src/raceengineer/sources.py`. The demo has no
+`--pause`, `--resume`, or `--stop` flag. UDP optionally stops after `--count` datagrams;
+`--host` selects the bind address.
+
+## Fuel Rule and Alerts
+
+Synthetic and file modes print each sample, then a triggered alert, then the
+radio line for that alert. Use `--alerts-only` to print alerts, `--radio-only`
+to print radio lines, or `--samples-only` to capture a replayable recording.
+Mixed output is a diagnostic stream, not a sample recording accepted by file
+replay. The sample format remains version 1. UDP stays a metadata probe and
+does not run telemetry rules.
+
+```powershell
+python -m raceengineer.demo --source synthetic --alerts-only
+python -m raceengineer.demo --source synthetic --radio-only
+python -m raceengineer.demo --source synthetic --radio-only --speak
+python -m raceengineer.demo --source synthetic --radio-only --brief
+python -m raceengineer.demo --source synthetic --fuel-low-threshold 9.8 --alerts-only
+```
+
+The single fuel rule requires `valid: true` and a present fuel observation.
+It fires at fuel <= 10.0 litres and remains suppressed until a valid observation
+rises above 12.0 litres. `--fuel-low-threshold` configures the firing threshold
+(finite, nonnegative, and below the fixed 12.0 reset threshold). Missing fuel,
+false validity, and unknown validity cannot trigger or reset the alert. Session
+state retains the last valid fuel and lap; stale fuel is never used to trigger.
+The default synthetic scenario starts at 11.5 litres and reaches 10.0 at sample
+index 15, then stays below the threshold through the remaining default samples.
+
+Alert lines have `format: "raceengineer.alert"`, `version: 1`, and an `alert`
+object containing `type: "fuel_low"`, `priority: "high"`, `timestamp`, `fuel`,
+and `message: "Fuel low. Box this lap."`. The timestamp uses the triggering
+sample's source time, falling back to receipt time, then null; no clock value
+is invented. Each CLI run starts a fresh session. Programmatic users call
+`RulesEngine.restart()` when restarting a source; restarts are not inferred
+from missing fields, lap changes, or out-of-order timestamps.
+
+A `fuel_low` alert also prints one radio line: `format: "raceengineer.radio"`,
+`version: 1`, and a `radio` object with `source: "rule"`, `type: "fuel_low"`,
+`text: "Box, box. Questo giro."`, and the same timestamp. The alert
+message stays the English log line. Missing or
+invalid fuel still produces neither an alert nor a radio line.
+Without `--brief`, no language model is called. With `--brief`, after the rule
+radio line, local Ollama model `qwen3.5:4b` (`http://127.0.0.1:11434/api/chat`,
+about 15 seconds) may print a second `raceengineer.radio` line (`source: "llm"`,
+same type and timestamp). If Ollama is down, times out, or returns empty,
+nothing extra is printed, stderr gets one line, and the process does not fail.
+A reply that names fields, timestamps, or other log wording is dropped, and
+stderr says `brief rejected`. The rule radio stays.
+
+`--speak` says each printed radio line, the rule line first and the llm line
+when that line is printed. It uses local Piper when the selected `it_IT` voice
+and its matching `.onnx.json` are installed and `piper` is on `PATH` or under
+the cache below. If Piper or the selected voice is missing, it uses Windows
+System.Speech. The first fallback prints one stderr line: `piper unavailable,
+using SAPI`. If speech fails, the radio JSON is still printed and an error is
+written to stderr. `--speak` does nothing when no radio line is produced.
+
+Piper and the voice stay outside git, in `%LOCALAPPDATA%\RaceEngineer\piper`
+(`it_IT-paola-medium.onnx` plus the matching `.onnx.json`). The following
+legacy setup example is for Paola; select it with `--speak --voice paola`:
+
+```powershell
+$dest = Join-Path $env:LOCALAPPDATA "RaceEngineer\piper"
+New-Item -ItemType Directory -Force -Path $dest | Out-Null
+curl.exe -L --fail -o "$dest\piper_windows_amd64.zip" "https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_windows_amd64.zip"
+Expand-Archive "$dest\piper_windows_amd64.zip" -DestinationPath $dest -Force
+curl.exe -L --fail -o "$dest\it_IT-paola-medium.onnx" "https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/paola/medium/it_IT-paola-medium.onnx"
+curl.exe -L --fail -o "$dest\it_IT-paola-medium.onnx.json" "https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/paola/medium/it_IT-paola-medium.onnx.json"
+```
+
+If Paola is unavailable, the same two steps with Riccardo from
+`https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/riccardo/x_low/it_IT-riccardo-x_low.onnx`
+and its `.onnx.json`, then select `--speak --voice riccardo`. Skip the download
+when `piper.exe` and the selected `it_IT` model with its matching config
+are already in that folder. Riccardo has no medium file in that set; use
+`it_IT-riccardo-x_low.onnx` and its `.onnx.json` from
+`https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/riccardo/x_low/`.
+
+`--voice paola`, `riccardo`, `serena`, or `dii` selects which installed Piper file speaks. The default spoken voice is Serena (`it_IT-serena-high`). Dii remains available locally and is not the official project voice (CC BY-NC-SA).
+Installing Paola or Riccardo does not install the default Serena voice.
+The legacy 2023 Piper binary above does not establish Serena-high support;
+high voices require a compatible Piper binary. This example does not qualify
+a Serena-high setup or Linux playback.
+That flag is a Voice Profile stand-in: it changes only the sound of the radio.
+Engineer Profiles, which would carry attitude and verbosity, are a separate
+layer and are not implemented in this slice. See `PROJECT_JOURNAL.md`,
+Engineer Profiles and Voice Profiles.
+
+## Version 1 Recording
+
+Each UTF-8 JSONL line contains `format: "raceengineer.sample"`, `version: 1`,
+and a `sample` object. Replay preserves file order, duplicates, timestamps,
+and invalid samples. Delivery uses `--rate`, without replacing timestamps.
+Malformed records, unsupported versions, unknown sample fields, and wrong types
+fail with a line-number diagnostic and a nonzero exit code.
+
+Fields: `source_ts`, `recv_ts`, `source_id`, `lap`, `lap_time`, `speed`, `fuel`,
+`valid`, `quality`. Missing fields remain `None` internally and JSON `null` on
+output. Numeric fields must be finite, lap an integer, valid a boolean, and
+identity and quality strings. Quality is supplied by the source; no validity
+or observation is inferred. Invalid samples are retained for later analysis.
+
+Times use seconds, speed metres per second, and fuel litres. Timestamp clock
+domains belong to the source. Synthetic source and receipt times use logical
+seconds starting at zero, representing simulated arrival rather than wall time.
+The same count and rate produce identical output.
+
+UDP output contains only peer address/port, datagram size in bytes, and receipt
+time in Unix seconds. Payloads are neither parsed nor logged. UDP metadata is
+separate from samples and cannot be replayed as telemetry. Tests require no
+simulator or Internet access; the UDP test uses loopback only.
