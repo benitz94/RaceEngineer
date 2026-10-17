@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-10-15
+Last updated: 2026-10-17
 
 ## Current State
 
@@ -67,6 +67,14 @@ require the existing CLA.
 
 Model selection is established; hardware/platform qualification remains open.
 No simulator protocol adapter is implemented.
+
+Local development agents have Matt Pocock skills and selected ECC Python/latency
+guidance under `.agents/skills`. `AGENTS.md` documents model-independent usage;
+Planwharf supplies this project's ECC guidance to its provider prompts. This is
+development tooling only, with no change to the runtime or qualification state.
+The portable skill catalog and host entry points direct agents to check upstream
+updates once per session using `.agents/check-updates.py`; updates are read-only
+checks and do not overwrite local guidance automatically.
 
 ## Next Objective
 
