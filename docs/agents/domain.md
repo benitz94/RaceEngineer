@@ -11,9 +11,11 @@ projects.
 
 - **Local first:** core functionality must work without mandatory cloud
   services or dependence on the development PC.
-- **Deterministic critical path:** critical race decisions and alerts remain
-  explicit deterministic rules. An LLM is never their authority. Missing or
-  invalid observations must not invent decisions.
+- **Deterministic event detection:** critical race events and alerts are
+  detected by explicit deterministic rules. An LLM is never their authority.
+  Missing or invalid observations must not invent decisions. The language
+  model writes every radio line in its own words; there is no canned
+  fallback, and a silent radio is reported as a failure.
 - **Simulator-independent core:** simulator/protocol-specific acquisition and
   decoding belong in adapters, never in core race logic.
 - **Optional component failure:** unavailable or failing LLM, TTS, or optional
@@ -37,10 +39,10 @@ projects.
 
 ## Model and platform boundary
 
-The selected pair is `qwen3.5:4b` (Q4_K_M) for briefings and `qwen3.5:0.8b`
+The selected pair is `qwen3.5:4b` (Q4_K_M) as the engineer's voice and `qwen3.5:0.8b`
 (Q8_0) for constrained typed classification only. Current decisions remain
-deterministic code; the neural grammar path is not implemented. Critical rule
-radio remains available on optional-model failure.
+deterministic code; the neural grammar path is not implemented. On model
+failure the radio stays silent and the failure is reported.
 
 Product VRAM guidance is 8 GB minimum and 12 GB recommended. Windows/RTX 3050
 measurements are development evidence only. The intended platform is

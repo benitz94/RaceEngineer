@@ -1,13 +1,12 @@
 # Pit-wall phrase book
 
-This list is training and few-shot material. It shows the language model the
-pit-wall register: short spoken lines, a concrete instruction, and no
-markdown. It is not a whitelist. When a briefing is allowed, the model may
-coin a new line in that register.
+This list is the engineer's baggage. It shows the language model how a
+pit-wall call is built: short spoken lines, a concrete instruction, and no
+markdown. It is not a script and not a whitelist. No line is ever aired as
+written; the engineer always speaks in his own words.
 
-A critical `fuel_low` radio call with no declared `brief` skill does not use
-this list. It stays the rule sentence already in code: "Box, box. Questo
-giro."
+The Italian examples are mirrored in `PHRASE_BOOK` in
+`src/raceengineer/briefing.py`, which places them in the model prompt.
 
 The Italian line is the driver-facing example. The English line is the same
 call for training, not a second radio script.

@@ -8,7 +8,7 @@ import unittest
 import urllib.error
 from unittest.mock import patch
 
-from raceengineer.briefing import SYSTEM_PROMPT, TIMEOUT_SECONDS, BriefingUnavailable, brief_alert
+from raceengineer.briefing import PHRASE_BOOK, SYSTEM_PROMPT, TIMEOUT_SECONDS, BriefingUnavailable, brief_alert
 from raceengineer.demo import main
 from raceengineer.model import Sample
 from raceengineer.recording import encode
@@ -44,20 +44,22 @@ def _http_error(status, detail, reason="Bad Request"):
 
 
 class BriefingTests(unittest.TestCase):
-    def run_cli(self, arguments):
+    def run_cli(self, arguments, expected_status=0):
         output = io.StringIO()
         error = io.StringIO()
         with contextlib.redirect_stdout(output), contextlib.redirect_stderr(error), \
              patch("raceengineer.demo.paced", side_effect=lambda samples, rate: samples):
             status = main(arguments)
-        self.assertEqual(status, 0, error.getvalue())
+        self.assertEqual(status, expected_status, error.getvalue())
         records = [json.loads(line) for line in output.getvalue().splitlines()]
         return records, error.getvalue()
 
     def test_prompt_limits_the_model_to_passed_alert_fields(self):
         self.assertIn("pit-wall engineer", SYSTEM_PROMPT)
         self.assertIn("Speak Italian. At most two short sentences.", SYSTEM_PROMPT)
-        self.assertIn("docs/RADIO_PHRASES.md is register training, not a script and not a whitelist.", SYSTEM_PROMPT)
+        for phrase in PHRASE_BOOK:
+            self.assertIn(phrase, SYSTEM_PROMPT)
+        self.assertIn("They are not a script. Do not copy a whole line; say it in your own words.", SYSTEM_PROMPT)
         self.assertIn("dieci litri", SYSTEM_PROMPT)
         self.assertIn("Never say the JSON key names type, timestamp, source, format, or version.", SYSTEM_PROMPT)
         self.assertIn("Never say a raw timestamp such as 1.5.", SYSTEM_PROMPT)
@@ -168,42 +170,44 @@ class BriefingTests(unittest.TestCase):
         self.assertEqual(sentence, SENTENCE)
         self.assertEqual(captured, {"url": "http://192.168.1.20:11434/api/chat", "model": "phi4-mini"})
 
-    def test_cli_passes_ollama_url_and_model(self):
+    def test_cli_passes_ollama_url_model_and_urgency_deadline(self):
         with patch("raceengineer.demo.brief_alert", return_value=SENTENCE) as brief:
             radios, _stderr = self.run_cli([
-                "--source", "synthetic", "--radio-only", "--brief",
-                "--ollama-url", "http://192.168.1.20:11434", "--brief-model", "phi4-mini",
+                "--source", "synthetic", "--radio-only", "--engineer",
+                "--ollama-url", "http://192.168.1.20:11434", "--engineer-model", "phi4-mini",
             ])
-        self.assertEqual(brief.call_args.kwargs, {"base_url": "http://192.168.1.20:11434", "model": "phi4-mini"})
-        self.assertEqual([radio["radio"]["source"] for radio in radios], ["rule", "llm"])
+        self.assertEqual(brief.call_args.kwargs, {
+            "timeout": 1.0, "base_url": "http://192.168.1.20:11434", "model": "phi4-mini",
+        })
+        self.assertEqual([radio["radio"]["source"] for radio in radios], ["llm"])
 
     def test_cli_rejects_bad_ollama_url(self):
         for url in ("127.0.0.1:11434", "ftp://host:11434", "http://"):
             with patch("sys.stderr", io.StringIO()), self.assertRaises(SystemExit) as raised:
-                main(["--source", "synthetic", "--count", "0", "--brief", "--ollama-url", url])
+                main(["--source", "synthetic", "--count", "0", "--engineer", "--ollama-url", url])
             self.assertEqual(raised.exception.code, 2)
 
-    def test_paths_without_a_briefing_do_not_use_the_network(self):
+    def test_radio_and_speech_need_the_engineer(self):
+        for flag in ("--radio-only", "--speak"):
+            with patch("sys.stderr", io.StringIO()), self.assertRaises(SystemExit) as raised:
+                main(["--source", "synthetic", "--count", "0", flag])
+            self.assertEqual(raised.exception.code, 2)
+
+    def test_paths_without_the_engineer_do_not_use_the_network(self):
         with patch("socket.create_connection", side_effect=OSError("blocked")) as connect, \
              patch("urllib.request.urlopen", side_effect=OSError("blocked")) as urlopen:
             records, stderr = self.run_cli(["--source", "synthetic"])
-            radios, radio_stderr = self.run_cli(["--source", "synthetic", "--radio-only"])
-            samples, samples_stderr = self.run_cli(["--source", "synthetic", "--samples-only", "--brief"])
-            alerts, alerts_stderr = self.run_cli(["--source", "synthetic", "--alerts-only", "--brief"])
-        self.assertEqual(stderr, "")
-        self.assertEqual(radio_stderr, "")
-        self.assertEqual(samples_stderr, "")
-        self.assertEqual(alerts_stderr, "")
-        self.assertEqual(len(records), 22)
-        self.assertEqual([record["radio"]["source"] for record in records if "radio" in record], ["rule"])
-        self.assertEqual(radios[0]["radio"]["text"], "Box, box. Questo giro.")
+            samples, samples_stderr = self.run_cli(["--source", "synthetic", "--samples-only", "--engineer"])
+            alerts, alerts_stderr = self.run_cli(["--source", "synthetic", "--alerts-only", "--engineer"])
+        self.assertEqual(stderr + samples_stderr + alerts_stderr, "")
+        self.assertEqual(len(records), 21)
+        self.assertFalse([record for record in records if record["format"] == "raceengineer.radio"])
         self.assertEqual(len(samples), 20)
-        self.assertEqual(len(alerts), 1)
-        self.assertEqual(alerts[0]["format"], "raceengineer.alert")
+        self.assertEqual([alert["format"] for alert in alerts], ["raceengineer.alert"])
         connect.assert_not_called()
         urlopen.assert_not_called()
 
-    def test_radio_only_brief_appends_the_model_sentence(self):
+    def test_engineer_line_is_the_only_radio(self):
         captured = {}
 
         def opener(request, timeout):
@@ -213,25 +217,20 @@ class BriefingTests(unittest.TestCase):
 
         with patch("socket.create_connection", side_effect=OSError("blocked")), \
              patch("urllib.request.urlopen", side_effect=opener):
-            radios, stderr = self.run_cli(["--source", "synthetic", "--radio-only", "--brief"])
+            records, stderr = self.run_cli(["--source", "synthetic", "--engineer"])
         self.assertEqual(stderr, "")
-        self.assertEqual(captured["timeout"], 3)
-        self.assertEqual([radio["format"] for radio in radios], ["raceengineer.radio", "raceengineer.radio"])
-        self.assertEqual([radio["version"] for radio in radios], [1, 1])
-        rule, briefing = (radio["radio"] for radio in radios)
-        self.assertEqual(rule, {
-            "source": "rule", "type": "fuel_low",
-            "text": "Box, box. Questo giro.", "timestamp": 1.5,
-        })
-        self.assertEqual(briefing, {
-            "source": "llm", "type": "fuel_low", "text": SENTENCE, "timestamp": 1.5,
-        })
-        self.assertNotIn("sector", briefing["text"])
+        self.assertEqual(captured["timeout"], 1.0)
+        radios = [record for record in records if record["format"] == "raceengineer.radio"]
+        self.assertEqual(radios, [{
+            "format": "raceengineer.radio", "version": 1,
+            "radio": {"source": "llm", "type": "fuel_low", "text": SENTENCE, "timestamp": 1.5},
+        }])
+        alert_at = next(index for index, record in enumerate(records) if record["format"] == "raceengineer.alert")
+        self.assertEqual(records[alert_at + 1], radios[0])
         users = [item["content"] for item in captured["payload"]["messages"] if item["role"] == "user"]
-        user = json.loads(users[-1])
-        self.assertEqual(user, {"fuel": 10.0, "timestamp": 1.5, "type": "fuel_low"})
+        self.assertEqual(json.loads(users[-1]), {"fuel": 10.0, "timestamp": 1.5, "type": "fuel_low"})
 
-    def test_ollama_failures_keep_the_rule_radio_and_exit_zero(self):
+    def test_model_failures_leave_the_radio_silent_and_exit_one(self):
         failures = {
             "down": urllib.error.URLError("down\nstill down"),
             "timeout": TimeoutError("timed out"),
@@ -247,21 +246,13 @@ class BriefingTests(unittest.TestCase):
                         raise failure
                     return failure
 
-                output = io.StringIO()
-                error = io.StringIO()
                 with patch("urllib.request.urlopen", side_effect=opener), \
-                     patch("socket.create_connection", side_effect=OSError("blocked")), \
-                     contextlib.redirect_stdout(output), contextlib.redirect_stderr(error), \
-                     patch("raceengineer.demo.paced", side_effect=lambda samples, rate: samples):
-                    status = main(["--source", "synthetic", "--radio-only", "--brief"])
-                self.assertEqual(status, 0)
-                radios = [json.loads(line) for line in output.getvalue().splitlines()]
-                self.assertEqual(len(radios), 1)
-                self.assertEqual(radios[0]["radio"]["source"], "rule")
-                self.assertEqual(radios[0]["radio"]["text"], "Box, box. Questo giro.")
-                lines = error.getvalue().splitlines()
+                     patch("socket.create_connection", side_effect=OSError("blocked")):
+                    radios, stderr = self.run_cli(["--source", "synthetic", "--radio-only", "--engineer"], 1)
+                self.assertEqual(radios, [])
+                lines = stderr.splitlines()
                 self.assertEqual(len(lines), 1)
-                self.assertTrue(lines[0].startswith("error: briefing unavailable:"))
+                self.assertTrue(lines[0].startswith("error: engineer silent:"))
                 if name == "timeout":
                     self.assertIn("timed out", lines[0])
                 if name == "down":
@@ -269,19 +260,19 @@ class BriefingTests(unittest.TestCase):
                 if name == "empty":
                     self.assertIn("empty response", lines[0])
 
-    def test_missing_fuel_with_brief_does_not_call_ollama(self):
+    def test_missing_fuel_with_engineer_does_not_call_ollama(self):
         samples = [Sample(fuel=None, valid=True), Sample(fuel=9, valid=False), Sample(fuel=9)]
         with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
             path = Path(directory) / "samples.jsonl"
             path.write_text("\n".join(map(encode, samples)), encoding="utf-8")
             with patch("urllib.request.urlopen", side_effect=OSError("blocked")) as urlopen:
-                records, stderr = self.run_cli(["--source", "file", str(path), "--brief"])
+                records, stderr = self.run_cli(["--source", "file", str(path), "--engineer"])
         self.assertEqual(stderr, "")
         self.assertTrue(records)
         self.assertTrue(all(record["format"] == "raceengineer.sample" for record in records))
         urlopen.assert_not_called()
 
-    def test_each_reset_fuel_alert_gets_its_own_briefing(self):
+    def test_each_reset_fuel_alert_gets_its_own_line(self):
         samples = [
             Sample(fuel=10, valid=True, source_ts=1),
             Sample(fuel=9, valid=True, source_ts=2),
@@ -299,19 +290,16 @@ class BriefingTests(unittest.TestCase):
             path = Path(directory) / "samples.jsonl"
             path.write_text("\n".join(map(encode, samples)), encoding="utf-8")
             with patch("urllib.request.urlopen", side_effect=opener):
-                radios, stderr = self.run_cli(["--source", "file", str(path), "--radio-only", "--brief"])
+                radios, stderr = self.run_cli(["--source", "file", str(path), "--radio-only", "--engineer"])
         self.assertEqual(stderr, "")
-        self.assertEqual([radio["radio"]["source"] for radio in radios], ["rule", "llm", "rule", "llm"])
-        self.assertEqual(radios[0]["radio"]["text"], "Box, box. Questo giro.")
-        self.assertEqual(radios[2]["radio"]["text"], "Box, box. Questo giro.")
-        self.assertEqual(radios[1]["radio"]["timestamp"], 1)
-        self.assertEqual(radios[3]["radio"]["timestamp"], 4)
+        self.assertEqual([radio["radio"]["timestamp"] for radio in radios], [1, 4])
+        self.assertEqual([radio["radio"]["source"] for radio in radios], ["llm", "llm"])
         self.assertEqual(calls, [
             {"fuel": 10, "timestamp": 1, "type": "fuel_low"},
             {"fuel": 9, "timestamp": 4, "type": "fuel_low"},
         ])
 
-    def test_speak_with_brief_speaks_rule_then_llm(self):
+    def test_speak_says_the_engineer_line_after_printing_it(self):
         spoken = []
 
         def record(text, voice="paola"):
@@ -323,86 +311,40 @@ class BriefingTests(unittest.TestCase):
         with patch("raceengineer.demo.speak", side_effect=record), \
              patch("urllib.request.urlopen", side_effect=opener), \
              patch("socket.create_connection", side_effect=OSError("blocked")):
-            radios, stderr = self.run_cli(["--source", "synthetic", "--radio-only", "--speak", "--brief"])
+            radios, stderr = self.run_cli(["--source", "synthetic", "--radio-only", "--speak", "--engineer"])
         self.assertEqual(stderr, "")
-        self.assertEqual([text for text, _stdout in spoken], ["Box, box. Questo giro.", SENTENCE])
-        self.assertIn("Box, box. Questo giro.", spoken[0][1])
-        self.assertNotIn(SENTENCE, spoken[0][1])
-        self.assertIn(SENTENCE, spoken[1][1])
-        self.assertEqual([radio["radio"]["source"] for radio in radios], ["rule", "llm"])
+        self.assertEqual([text for text, _stdout in spoken], [SENTENCE])
+        self.assertIn(SENTENCE, spoken[0][1])
+        self.assertEqual([radio["radio"]["text"] for radio in radios], [SENTENCE])
 
-    def test_speech_failure_still_returns_one_when_a_briefing_is_printed(self):
+    def test_speech_failure_still_prints_the_line_and_exits_one(self):
         def opener(request, timeout):
             return _Response({"message": {"content": SENTENCE}})
 
-        output = io.StringIO()
-        error = io.StringIO()
         with patch("raceengineer.demo.speak", side_effect=RuntimeError("sapi down")), \
-             patch("urllib.request.urlopen", side_effect=opener), \
-             contextlib.redirect_stdout(output), contextlib.redirect_stderr(error), \
-             patch("raceengineer.demo.paced", side_effect=lambda samples, rate: samples):
-            status = main(["--source", "synthetic", "--radio-only", "--speak", "--brief"])
-        self.assertEqual(status, 1)
-        radios = [json.loads(line) for line in output.getvalue().splitlines()]
-        self.assertEqual([radio["radio"]["source"] for radio in radios], ["rule", "llm"])
-        self.assertEqual(radios[0]["radio"]["text"], "Box, box. Questo giro.")
-        self.assertEqual(radios[1]["radio"]["text"], SENTENCE)
-        self.assertEqual(error.getvalue().splitlines(), [
-            "error: speech failed: sapi down",
-            "error: speech failed: sapi down",
-        ])
-        self.assertNotIn("briefing unavailable", error.getvalue())
+             patch("urllib.request.urlopen", side_effect=opener):
+            radios, stderr = self.run_cli(["--source", "synthetic", "--radio-only", "--speak", "--engineer"], 1)
+        self.assertEqual([radio["radio"]["text"] for radio in radios], [SENTENCE])
+        self.assertEqual(stderr.splitlines(), ["error: speech failed: sapi down"])
 
-    def test_reject_keeps_the_rule_radio_without_retry(self):
-        calls = []
+    def test_rejected_line_is_not_retried_or_spoken(self):
+        for reply in ("tangente sud", "alert type fuel_low timestamp 1.5. Conferma il segnale sul sector 3."):
+            with self.subTest(reply=reply):
+                calls = []
+                spoken = []
 
-        def opener(request, timeout):
-            calls.append(1)
-            return _Response({"message": {"content": "tangente sud"}})
+                def opener(request, timeout, reply=reply):
+                    calls.append(1)
+                    return _Response({"message": {"content": reply}})
 
-        with patch("urllib.request.urlopen", side_effect=opener), \
-             patch("socket.create_connection", side_effect=OSError("blocked")):
-            radios, stderr = self.run_cli(["--source", "synthetic", "--radio-only", "--brief"])
-        self.assertEqual(calls, [1])
-        self.assertEqual(len(radios), 1)
-        self.assertEqual(radios[0]["radio"]["text"], "Box, box. Questo giro.")
-        self.assertEqual(stderr.splitlines(), ["error: brief rejected"])
-
-    def test_speak_does_not_say_a_rejected_brief(self):
-        spoken = []
-
-        def opener(request, timeout):
-            return _Response({"message": {"content": "alert type fuel_low timestamp 1.5"}})
-
-        with patch("raceengineer.demo.speak", side_effect=lambda text, voice="paola": spoken.append(text)), \
-             patch("urllib.request.urlopen", side_effect=opener), \
-             patch("socket.create_connection", side_effect=OSError("blocked")):
-            radios, stderr = self.run_cli(["--source", "synthetic", "--radio-only", "--speak", "--brief"])
-        self.assertEqual(spoken, ["Box, box. Questo giro."])
-        self.assertEqual([radio["radio"]["source"] for radio in radios], ["rule"])
-        self.assertIn("brief rejected", stderr)
-
-    def test_log_like_brief_is_rejected_and_rule_radio_stays(self):
-        def opener(request, timeout):
-            return _Response({
-                "message": {
-                    "content": "alert type fuel_low timestamp 1.5. Conferma il segnale sul sector 3.",
-                },
-            })
-
-        output = io.StringIO()
-        error = io.StringIO()
-        with patch("urllib.request.urlopen", side_effect=opener), \
-             patch("socket.create_connection", side_effect=OSError("blocked")), \
-             contextlib.redirect_stdout(output), contextlib.redirect_stderr(error), \
-             patch("raceengineer.demo.paced", side_effect=lambda samples, rate: samples):
-            status = main(["--source", "synthetic", "--radio-only", "--brief"])
-        self.assertEqual(status, 0)
-        radios = [json.loads(line) for line in output.getvalue().splitlines()]
-        self.assertEqual(len(radios), 1)
-        self.assertEqual(radios[0]["radio"]["source"], "rule")
-        self.assertEqual(radios[0]["radio"]["text"], "Box, box. Questo giro.")
-        self.assertEqual(error.getvalue().splitlines(), ["error: brief rejected"])
+                with patch("raceengineer.demo.speak", side_effect=lambda text, voice="paola": spoken.append(text)), \
+                     patch("urllib.request.urlopen", side_effect=opener), \
+                     patch("socket.create_connection", side_effect=OSError("blocked")):
+                    radios, stderr = self.run_cli(["--source", "synthetic", "--radio-only", "--speak", "--engineer"], 1)
+                self.assertEqual(calls, [1])
+                self.assertEqual(radios, [])
+                self.assertEqual(spoken, [])
+                self.assertEqual(stderr.splitlines(), ["error: engineer silent: line rejected"])
 
 
 if __name__ == "__main__":

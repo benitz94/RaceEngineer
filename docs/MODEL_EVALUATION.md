@@ -6,9 +6,10 @@ two optional model roles already described by RaceEngineer:
 1. short Italian pit-wall briefings;
 2. bounded `canned`/`brief` and `grounded`/`reject` decisions.
 
-The harness does not move either model into the critical path. Deterministic
-rules remain authoritative, and an unavailable, timed-out, empty, malformed,
-or rejected model result leaves the rule radio line available.
+Note: since 2026-10-27 every radio line is generated and there is no rule
+fallback line (see `docs/DECISION_MODEL.md`). The runtime replaced
+`canned_or_brief` with `urgency`. This harness and its corpus still describe
+the earlier design and need updating.
 
 The current deterministic decision implementation does not declare a
 `speak`/`hold` question. The corpus therefore does not invent or score that

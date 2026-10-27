@@ -1,12 +1,12 @@
-"""Text recovery demo: normalized recordings or UDP metadata."""
+"""Text recovery demo: normalized recordings or UDP metadata, with an optional engineer radio."""
 
 import argparse
 import json
 import sys
 from .briefing import MODEL, OLLAMA_URL, BriefRejected, BriefingUnavailable, _accept_radio_text, brief_alert, chat_url
-from .decision import answer
+from .decision import URGENCY_SECONDS, answer
 from .recording import encode
-from .rules import FUEL_LOW_THRESHOLD, Radio, RulesEngine, rule_radio
+from .rules import FUEL_LOW_THRESHOLD, Radio, RulesEngine
 from .sources import paced, replay, synthetic, validate_rate
 from .speech import speak
 from .udp_probe import probe
@@ -20,6 +20,27 @@ def _speak_printed(text: str, voice: str) -> bool:
         print(f"error: speech failed: {error}", file=sys.stderr)
         return True
     return False
+
+
+def _engineer_line(alert, args) -> str | None:
+    """The engineer's own words for an alert, or None when the radio stays silent.
+
+    There is no canned fallback. A silent engineer is a defect to fix, so the
+    reason goes to stderr and the run exits nonzero.
+    """
+    urgency = answer("urgency", {"priority": alert.priority})
+    try:
+        candidate = brief_alert(
+            alert, timeout=URGENCY_SECONDS[urgency], base_url=args.ollama_url, model=args.engineer_model,
+        )
+        if answer("grounded_or_reject", {"text": candidate, "fuel": alert.fuel}) == "reject":
+            raise BriefRejected()
+        return _accept_radio_text(candidate)
+    except BriefRejected:
+        print("error: engineer silent: line rejected", file=sys.stderr)
+    except BriefingUnavailable as error:
+        print(f"error: engineer silent: {error}", file=sys.stderr)
+    return None
 
 
 def main(argv=None):
@@ -36,9 +57,9 @@ def main(argv=None):
     output.add_argument("--radio-only", action="store_true", help="print radio lines only")
     parser.add_argument("--speak", action="store_true", help="speak radio lines with local Piper Italian, or Windows SAPI / Linux espeak-ng")
     parser.add_argument("--voice", choices=("paola", "riccardo", "serena", "dii"), default="serena", help="Piper Italian voice")
-    parser.add_argument("--brief", action="store_true", help="ask local Ollama for a briefing after a rule radio line")
-    parser.add_argument("--ollama-url", default=OLLAMA_URL, help="Ollama base URL for --brief")
-    parser.add_argument("--brief-model", default=MODEL, help="Ollama model for --brief")
+    parser.add_argument("--engineer", action="store_true", help="let the local language model speak each alert on the radio")
+    parser.add_argument("--ollama-url", default=OLLAMA_URL, help="Ollama base URL for --engineer")
+    parser.add_argument("--engineer-model", default=MODEL, help="Ollama model for --engineer")
     parser.add_argument("--fuel-low-threshold", type=float, default=FUEL_LOW_THRESHOLD)
     args = parser.parse_args(argv)
     if args.source == "file" and not args.path:
@@ -55,8 +76,10 @@ def main(argv=None):
         chat_url(args.ollama_url)
     except ValueError as error:
         parser.error(str(error))
-    if not args.brief_model.strip():
-        parser.error("--brief-model must not be empty")
+    if not args.engineer_model.strip():
+        parser.error("--engineer-model must not be empty")
+    if (args.radio_only or args.speak) and not args.engineer:
+        parser.error("--radio-only and --speak need --engineer: every radio line comes from the engineer")
     if args.source == "udp" and (args.alerts_only or args.samples_only or args.radio_only):
         parser.error("sample, alert, and radio output flags are not supported for UDP metadata")
     try:
@@ -67,7 +90,7 @@ def main(argv=None):
         else:
             engine = RulesEngine(args.fuel_low_threshold)
             samples = synthetic(20 if args.count is None else args.count, args.rate) if args.source == "synthetic" else replay(args.path)
-            speech_failed = False
+            failed = False
             for sample in paced(samples, args.rate):
                 if not args.alerts_only and not args.radio_only:
                     print(encode(sample), flush=True)
@@ -76,35 +99,17 @@ def main(argv=None):
                     continue
                 if not args.radio_only:
                     print(alert.encode(), flush=True)
-                if args.alerts_only:
+                if args.alerts_only or not args.engineer:
                     continue
-                radio = rule_radio(alert)
+                text = _engineer_line(alert, args)
+                if text is None:
+                    failed = True
+                    continue
+                radio = Radio("llm", alert.type, text, alert.timestamp)
                 print(radio.encode(), flush=True)
                 if args.speak and _speak_printed(radio.text, args.voice):
-                    speech_failed = True
-                if alert.type != "fuel_low":
-                    continue
-                if answer("canned_or_brief", {"brief": args.brief}) != "brief":
-                    continue
-                # One attempt: a late pit call is worse than the rule line alone.
-                aired = None
-                try:
-                    candidate = brief_alert(alert, base_url=args.ollama_url, model=args.brief_model)
-                except BriefingUnavailable as error:
-                    print(f"error: briefing unavailable: {error}", file=sys.stderr)
-                else:
-                    try:
-                        if answer("grounded_or_reject", {"text": candidate, "fuel": alert.fuel}) == "reject":
-                            raise BriefRejected()
-                        aired = _accept_radio_text(candidate)
-                    except BriefRejected:
-                        print("error: brief rejected", file=sys.stderr)
-                if aired:
-                    llm = Radio("llm", radio.type, aired, radio.timestamp)
-                    print(llm.encode(), flush=True)
-                    if args.speak and _speak_printed(llm.text, args.voice):
-                        speech_failed = True
-            if speech_failed:
+                    failed = True
+            if failed:
                 return 1
     except (ValueError, OSError) as error:
         print(f"error: {error}", file=sys.stderr)

@@ -83,17 +83,20 @@ connecting a real source.
 
 ### Deterministic Critical Decisions
 
-Critical decisions during a session must be produced by explicit, verifiable,
-and repeatable rules.
+Critical event detection during a session must be produced by explicit,
+verifiable, and repeatable rules. The language model never decides whether
+an event happened or invents its data.
 
-Any LLM is outside the critical path.
+Every radio line is written by the language model. There is no canned
+fallback: when the model fails, the radio stays silent and the failure is
+reported as a defect to fix.
 
 ## Out of Scope for the First Prototype
 
 The first prototype does not include:
 
-- speech recognition;
-- LLM-based conversation;
+- speech recognition (planned next, with a physical push-to-talk button);
+- two-way conversation with the driver;
 - cloud dependencies;
 - advanced race strategies;
 - adaptive driver profiling;
@@ -282,24 +285,28 @@ It must retain at least:
 The need for a database will be evaluated only when concrete requirements for
 sessions, setups, and driver profiles emerge.
 
-## Optional LLM Modules
+## Engineer Voice (Language Model)
 
-An LLM is not part of the core and is not in the critical path.
+The language model is the engineer's voice. It receives events and data
+already produced by the deterministic system and writes each radio line in
+its own words. The phrase book in `docs/RADIO_PHRASES.md` is its baggage:
+structure examples, never aired as written. It does not decide whether an
+event happened and must not invent data.
 
-It may receive copies of events or summaries already produced by the
-deterministic system, but it will not replace the rules responsible for
-critical alerts.
+The typed decision model decides how urgent a call is, which sets how long
+the engineer may take to answer. A late, failed, or rejected line leaves the
+radio silent and is reported. See `docs/DECISION_MODEL.md`.
 
-The LLM interface must:
+The language model interface must:
 
-- be disableable;
-- not block the core;
-- tolerate unavailability and errors;
+- be switchable off, leaving events and alerts as text;
+- tolerate unavailability and errors without stopping telemetry analysis;
+- report every silent radio call as a failure;
 - clearly distinguish deterministic content from generated content;
 - not make a cloud connection mandatory.
 
-The demo's briefing and speech calls are synchronous. Asynchronous isolation
-needed to meet the nonblocking requirements is not yet implemented.
+The demo's engineer and speech calls are synchronous, bounded by the urgency
+deadline. Asynchronous isolation is not yet implemented.
 
 ## Error Handling
 

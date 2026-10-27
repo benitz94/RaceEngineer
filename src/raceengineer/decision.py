@@ -20,6 +20,8 @@ _TRACK_FIELDS = {
     "straight": frozenset({"straight", "straights", "rettilineo", "rettilinei", "rettifilo"}),
     "scarica": frozenset({"scarica", "scaricare"}),
 }
+# Seconds the engineer may take to find his words for each urgency label.
+URGENCY_SECONDS = {"now": 1.0, "normal": 3.0, "calm": 6.0}
 
 
 def declare(question_id: str, labels) -> None:
@@ -43,8 +45,9 @@ def answer(question_id: str, payload: dict | None = None) -> str:
     return label
 
 
-def _canned_or_brief(payload: dict) -> str:
-    return "brief" if payload.get("brief") is True else "canned"
+def _urgency(payload: dict) -> str:
+    # Stand-in for the typed decision model until its grammar path exists.
+    return "now" if payload.get("priority") == "high" else "normal"
 
 
 def _present(payload: dict, key: str) -> bool:
@@ -68,9 +71,9 @@ def _grounded_or_reject(payload: dict) -> str:
 
 
 _POLICIES = {
-    "canned_or_brief": _canned_or_brief,
+    "urgency": _urgency,
     "grounded_or_reject": _grounded_or_reject,
 }
 
-declare("canned_or_brief", ("canned", "brief"))
+declare("urgency", tuple(URGENCY_SECONDS))
 declare("grounded_or_reject", ("grounded", "reject"))

@@ -14,17 +14,34 @@ The owner removed the vendor constraint. Measurements on one GPU or OS still
 do not qualify another. Earlier entries that name an AMD Radeon describe the
 decision at that time.
 
-## Short Briefing Deadline — 2026-10-27
+## The Engineer Speaks in His Own Words — 2026-10-27
 
 Decision:
 
-An optional language-model briefing gets one attempt with a 3 second limit.
-If it is late, fails, or is rejected, only the rule radio line is aired.
+Every radio line is written by the language model. The phrase book is the
+engineer's baggage: it shows how a pit-wall call is built, and it is never
+aired as written. There is no canned fallback line.
+
+Deterministic rules still detect events such as low fuel. The typed decision
+model decides whether to speak, how urgent the call is, and whether there is
+room for a longer message or a question to the driver. Urgency sets how long
+the engineer may take to find his words: 1 second for `now`, 3 seconds for
+`normal`, and 6 seconds for `calm`, as starting values to measure. Until the
+neural grammar path exists, deterministic code answers in its place.
+
+If the model does not answer in time or produces a rejected line, the radio
+stays silent and the failure is reported as a defect to fix.
+
+The engineer usually says little, sometimes more, and may ask the driver for
+an opinion. Planned next: driver speech recognition with a physical
+push-to-talk button near the wheel (hardware not yet chosen; voice activation
+is not used), and memory that lets the engineer learn from race to race.
 
 Reason:
 
-A pit call that arrives late is worse than the rule line alone. The model must
-not delay the session.
+The engineer should sound like a real pit-wall engineer, not a list of fixed
+sentences. This supersedes the 2026-09-23 entries where the rule sentence was
+the radio call and the language model only added an optional briefing.
 
 ## Automatic Development Releases — 2026-10-15
 

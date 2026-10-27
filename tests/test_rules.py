@@ -11,7 +11,7 @@ from unittest.mock import patch
 from raceengineer.demo import main, speak
 from raceengineer.model import Sample
 from raceengineer.recording import encode
-from raceengineer.rules import RulesEngine, rule_radio
+from raceengineer.rules import Radio, RulesEngine
 
 
 class RulesTests(unittest.TestCase):
@@ -37,16 +37,14 @@ class RulesTests(unittest.TestCase):
         self.assertEqual(engine.state.lap, 2)
         self.assertFalse(engine.state.fuel_alert_fired)
 
-    def test_fuel_low_radio_text_is_italian(self):
-        engine = RulesEngine()
-        alert = engine.process(Sample(fuel=10.0, valid=True, source_ts=0, recv_ts=5, lap=2))
-        self.assertEqual(alert.message, "Fuel low. Box this lap.")
-        self.assertEqual(json.loads(rule_radio(alert).encode()), {
+    def test_rules_detect_but_do_not_speak(self):
+        import raceengineer.rules as rules
+        self.assertFalse(hasattr(rules, "rule_radio"))
+        self.assertFalse(hasattr(rules, "FUEL_LOW_RADIO_TEXT"))
+        self.assertEqual(json.loads(Radio("llm", "fuel_low", "Rientra.", 0).encode()), {
             "format": "raceengineer.radio", "version": 1,
-            "radio": {"source": "rule", "type": "fuel_low",
-                      "text": "Box, box. Questo giro.", "timestamp": 0},
+            "radio": {"source": "llm", "type": "fuel_low", "text": "Rientra.", "timestamp": 0},
         })
-        self.assertIsNone(engine.process(Sample(fuel=9.9, valid=True, source_ts=1)))
 
     def test_missing_and_invalid_fuel_produce_no_radio(self):
         samples = [Sample(fuel=None, valid=True), Sample(fuel=9, lap=3, valid=False), Sample(fuel=9)]
@@ -55,7 +53,9 @@ class RulesTests(unittest.TestCase):
             path.write_text("\n".join(map(encode, samples)), encoding="utf-8")
             records = self.run_cli(["--source", "file", str(path)])
             alerts = self.run_cli(["--source", "file", str(path), "--alerts-only"])
-            radios = self.run_cli(["--source", "file", str(path), "--radio-only"])
+            with patch("urllib.request.urlopen", side_effect=OSError("blocked")) as urlopen:
+                radios = self.run_cli(["--source", "file", str(path), "--radio-only", "--engineer"])
+        urlopen.assert_not_called()
         self.assertEqual(alerts, [])
         self.assertEqual(radios, [])
         self.assertTrue(all(record["format"] == "raceengineer.sample" for record in records))
@@ -95,20 +95,13 @@ class RulesTests(unittest.TestCase):
         arguments = ["--source", "synthetic"]
         records = self.run_cli(arguments)
         self.assertEqual(records, self.run_cli(arguments))
-        self.assertEqual(len(records), 22)
+        self.assertEqual(len(records), 21)
         alerts = [record for record in records if record["format"] == "raceengineer.alert"]
-        radios = [record for record in records if record["format"] == "raceengineer.radio"]
         self.assertEqual(len(alerts), 1)
-        self.assertEqual(len(radios), 1)
         self.assertEqual(alerts[0]["alert"]["fuel"], 10)
-        self.assertEqual(radios[0]["radio"]["source"], "rule")
-        self.assertEqual(radios[0]["radio"]["text"], "Box, box. Questo giro.")
         self.assertEqual(alerts[0]["alert"]["message"], "Fuel low. Box this lap.")
-        self.assertEqual(radios[0]["radio"]["timestamp"], alerts[0]["alert"]["timestamp"])
-        alert_at = next(index for index, record in enumerate(records) if record["format"] == "raceengineer.alert")
-        self.assertEqual(records[alert_at + 1]["format"], "raceengineer.radio")
+        self.assertFalse([record for record in records if record["format"] == "raceengineer.radio"])
         self.assertEqual(self.run_cli(arguments + ["--alerts-only"]), alerts)
-        self.assertEqual(self.run_cli(arguments + ["--radio-only"]), radios)
         self.assertEqual(len(self.run_cli(arguments + ["--samples-only"])), 20)
 
     def test_file_pipeline(self):
@@ -120,17 +113,18 @@ class RulesTests(unittest.TestCase):
             alerts = self.run_cli(["--source", "file", str(path), "--alerts-only"])
         self.assertEqual([record["alert"]["fuel"] for record in alerts], [10, 9])
 
-    def test_speak_uses_italian_radio_text_without_audio(self):
+    def test_speak_uses_the_engineer_text_without_audio(self):
         spoken = []
 
         def record(text, voice="paola"):
             spoken.append((text, sys.stdout.getvalue()))
 
-        with patch("raceengineer.demo.speak", side_effect=record):
-            radios = self.run_cli(["--source", "synthetic", "--radio-only", "--speak"])
-        self.assertEqual([radio["radio"]["text"] for radio in radios], ["Box, box. Questo giro."])
-        self.assertEqual(spoken[0][0], "Box, box. Questo giro.")
-        self.assertIn("Box, box. Questo giro.", spoken[0][1])
+        with patch("raceengineer.demo.speak", side_effect=record), \
+             patch("raceengineer.demo.brief_alert", return_value="Rientra. Benzina a dieci litri."):
+            radios = self.run_cli(["--source", "synthetic", "--radio-only", "--speak", "--engineer"])
+        self.assertEqual([radio["radio"]["text"] for radio in radios], ["Rientra. Benzina a dieci litri."])
+        self.assertEqual(spoken[0][0], "Rientra. Benzina a dieci litri.")
+        self.assertIn("Rientra. Benzina a dieci litri.", spoken[0][1])
 
     def test_speak_without_radio_is_a_no_op(self):
         samples = [Sample(fuel=None, valid=True), Sample(fuel=9, valid=False), Sample(fuel=9)]
@@ -138,7 +132,7 @@ class RulesTests(unittest.TestCase):
             path = Path(directory) / "samples.jsonl"
             path.write_text("\n".join(map(encode, samples)), encoding="utf-8")
             with patch("raceengineer.demo.speak") as speak_text:
-                records = self.run_cli(["--source", "file", str(path), "--speak"])
+                records = self.run_cli(["--source", "file", str(path), "--speak", "--engineer"])
         self.assertTrue(records)
         self.assertTrue(all(record["format"] == "raceengineer.sample" for record in records))
         speak_text.assert_not_called()
@@ -147,12 +141,13 @@ class RulesTests(unittest.TestCase):
         output = io.StringIO()
         error = io.StringIO()
         with patch("raceengineer.demo.speak", side_effect=RuntimeError("sapi down")), \
+             patch("raceengineer.demo.brief_alert", return_value="Rientra. Benzina a dieci litri."), \
              contextlib.redirect_stdout(output), contextlib.redirect_stderr(error), \
              patch("raceengineer.demo.paced", side_effect=lambda samples, rate: samples):
-            status = main(["--source", "synthetic", "--radio-only", "--speak"])
+            status = main(["--source", "synthetic", "--radio-only", "--speak", "--engineer"])
         self.assertEqual(status, 1)
         radio = json.loads(output.getvalue())
-        self.assertEqual(radio["radio"]["text"], "Box, box. Questo giro.")
+        self.assertEqual(radio["radio"]["text"], "Rientra. Benzina a dieci litri.")
         self.assertIn("error: speech failed: sapi down", error.getvalue())
 
     def test_speak_invokes_windows_sapi_without_starting_it(self):

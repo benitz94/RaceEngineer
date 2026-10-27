@@ -13,7 +13,7 @@ in English.
 
 The two local models are selected:
 
-1. `qwen3.5:4b` (Q4_K_M) for short radio briefings;
+1. `qwen3.5:4b` (Q4_K_M), the engineer's voice for every radio line;
 2. `qwen3.5:0.8b` (Q8_0) for constrained typed classification only.
 
 Both models must be free to obtain and run locally. Paid weights and

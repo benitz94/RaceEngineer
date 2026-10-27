@@ -18,10 +18,12 @@ after the session.
 The two local models are chosen. Details and the measured VRAM floor are in
 `docs/MODEL_SELECTION.md`.
 
-1. Language model for short radio briefings: `qwen3.5:4b` (Q4_K_M, Apache-2.0).
+1. Language model that speaks every radio line: `qwen3.5:4b` (Q4_K_M,
+   Apache-2.0). The phrase book is its baggage, not a script.
 2. Typed decision model: `qwen3.5:0.8b` (Q8_0, Apache-2.0), constrained to
-   declared labels only. If the grammar fails or the call times out, rules
-   keep the radio.
+   declared labels only. It decides whether and how urgently the engineer
+   speaks. Deterministic code answers in its place until its grammar path
+   exists.
 
 Product VRAM floor: 8 GB minimum, 12 GB recommended. The GPU vendor is not
 fixed and the exact card is not chosen. Development bench traces do not
@@ -106,7 +108,9 @@ functionality.
 ### Models and hardware first
 
 The language model and the typed decision model are selected. See
-`docs/MODEL_SELECTION.md`. Critical race alerts remain in deterministic rules.
+`docs/MODEL_SELECTION.md`. Deterministic rules detect race events; the
+language model puts every radio call in its own words. When the model fails,
+the radio stays silent and the failure is reported as a defect.
 The intended product still needs a GPU that can hold both models: 8 GB
 minimum, 12 GB recommended.
 
@@ -170,12 +174,12 @@ The first prototype will be a minimal local pipeline:
 4. update the session state;
 5. detect at least one event through a deterministic rule;
 6. produce a text alert;
-7. when available, play the same alert through local TTS;
+7. let the engineer model speak the alert in its own words through local TTS;
 8. record events, alerts, and diagnostic data.
 
 The prototype will not initially include:
 
-- speech recognition;
+- speech recognition (planned next, with a physical push-to-talk button);
 - mandatory cloud services;
 - a complete dashboard;
 - advanced strategies;

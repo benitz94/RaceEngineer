@@ -26,18 +26,18 @@ are programmatic: `ReplaySession.pause`, `ReplaySession.resume`, and
 
 ## Fuel Rule and Alerts
 
-Synthetic and file modes print each sample, then a triggered alert, then the
-radio line for that alert. Use `--alerts-only` to print alerts, `--radio-only`
-to print radio lines, or `--samples-only` to capture a replayable recording.
+Synthetic and file modes print each sample, then a triggered alert, then,
+with `--engineer`, the engineer's radio line for that alert. Use
+`--alerts-only` to print alerts, `--radio-only` to print radio lines (needs
+`--engineer`), or `--samples-only` to capture a replayable recording.
 Mixed output is a diagnostic stream, not a sample recording accepted by file
 replay. The sample format remains version 1. UDP stays a metadata probe and
 does not run telemetry rules.
 
 ```powershell
 python -m raceengineer.demo --source synthetic --alerts-only
-python -m raceengineer.demo --source synthetic --radio-only
-python -m raceengineer.demo --source synthetic --radio-only --speak
-python -m raceengineer.demo --source synthetic --radio-only --brief
+python -m raceengineer.demo --source synthetic --radio-only --engineer
+python -m raceengineer.demo --source synthetic --radio-only --engineer --speak
 python -m raceengineer.demo --source synthetic --fuel-low-threshold 9.8 --alerts-only
 ```
 
@@ -58,25 +58,27 @@ is invented. Each CLI run starts a fresh session. Programmatic users call
 `RulesEngine.restart()` when restarting a source; restarts are not inferred
 from missing fields, lap changes, or out-of-order timestamps.
 
-A `fuel_low` alert also prints one radio line: `format: "raceengineer.radio"`,
-`version: 1`, and a `radio` object with `source: "rule"`, `type: "fuel_low"`,
-`text: "Box, box. Questo giro."`, and the same timestamp. The alert
-message stays the English log line. Missing or
-invalid fuel still produces neither an alert nor a radio line.
-Without `--brief`, no language model is called. With `--brief`, after the rule
-radio line, local Ollama model `qwen3.5:4b` (`http://127.0.0.1:11434/api/chat`,
-at most 3 seconds, one attempt) may print a second `raceengineer.radio` line (`source: "llm"`,
-same type and timestamp). If Ollama is down, times out, or returns empty,
-nothing extra is printed, stderr gets one line, and the process does not fail.
-A reply that names fields, timestamps, or other log wording is dropped, and
-stderr says `brief rejected`. The rule radio stays.
-`--ollama-url` sets the Ollama base URL (default `http://127.0.0.1:11434`)
-and `--brief-model` sets the briefing model (default `qwen3.5:4b`), for
-example `--brief --ollama-url http://192.168.1.20:11434`. Other models are not
-evaluated briefing models; the output filters stay the same.
+Without `--engineer`, no language model is called and no radio line is
+printed. With `--engineer`, each alert is put in the engineer's own words by
+local Ollama model `qwen3.5:4b` (`http://127.0.0.1:11434/api/chat`, one
+attempt). The `urgency` decision sets the deadline: 1 second for a `high`
+priority alert, otherwise 3 seconds. An accepted line prints one radio line:
+`format: "raceengineer.radio"`, `version: 1`, and a `radio` object with
+`source: "llm"`, the alert `type`, the generated `text`, and the alert
+timestamp. The alert message stays the English log line. Missing or invalid
+fuel produces neither an alert nor a radio line.
 
-`--speak` says each printed radio line, the rule line first and the llm line
-when that line is printed. It uses local Piper when the selected `it_IT` voice
+There is no canned fallback. If Ollama is down, times out, or returns empty,
+stderr gets `error: engineer silent: <reason>`. A reply that invents a track
+place or reads like a log gets `error: engineer silent: line rejected`. In
+both cases no radio line is printed or spoken, the run continues, and it exits
+with status 1.
+`--ollama-url` sets the Ollama base URL (default `http://127.0.0.1:11434`)
+and `--engineer-model` sets the model (default `qwen3.5:4b`), for example
+`--engineer --ollama-url http://192.168.1.20:11434`. Other models are not
+evaluated engineer models; the output filters stay the same.
+
+`--speak` (needs `--engineer`) says each printed radio line. It uses local Piper when the selected `it_IT` voice
 and its matching `.onnx.json` are installed and `piper` is on `PATH` or under
 the cache below. If Piper or the selected voice is missing, it uses Windows
 System.Speech, or `espeak-ng -v it` on Linux. The first fallback prints one

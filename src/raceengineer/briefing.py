@@ -1,7 +1,9 @@
-"""Optional local briefing after a rule radio line.
+"""The engineer's radio line, written by the local language model.
 
-Nothing here runs unless the caller asks. The typed decision model is not
-involved, and a failed request must not replace the rule radio.
+Every radio line is generated. The phrase book is the engineer's baggage: it
+shows how a pit-wall call is built, and the model speaks in its own words.
+There is no canned fallback; a failed request leaves the radio silent and the
+caller reports the failure.
 """
 
 import json
@@ -13,9 +15,20 @@ import urllib.request
 OLLAMA_URL = "http://127.0.0.1:11434"
 MODEL = "qwen3.5:4b"
 TIMEOUT_SECONDS = 3
+# Mirrors docs/RADIO_PHRASES.md. Structure examples, never aired as written.
+PHRASE_BOOK = (
+    "Box, box. Questo giro.",
+    "Resta fuori. Continua così.",
+    "Alza e veleggia. Risparmia benzina.",
+    "Gestisci il passo. Non spingere.",
+    "Spingi ora. Pista libera.",
+    "Radio check. Mi ricevi?",
+)
 SYSTEM_PROMPT = (
     "You are a pit-wall engineer. Speak Italian. At most two short sentences. "
-    "docs/RADIO_PHRASES.md is register training, not a script and not a whitelist. "
+    "These calls show how a radio message is built: "
+    + " / ".join(PHRASE_BOOK)
+    + " They are not a script. Do not copy a whole line; say it in your own words. "
     "Give one driver action and, when fuel is present, say that fuel as spoken Italian words "
     "(for example dieci litri). Do not say digits or field names. "
     "Never say the JSON key names type, timestamp, source, format, or version. "

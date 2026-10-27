@@ -6,7 +6,7 @@ Last updated: 2026-10-27
 
 The two local models are selected:
 
-1. `qwen3.5:4b` (Q4_K_M) for short radio briefings;
+1. `qwen3.5:4b` (Q4_K_M), the engineer's voice for every radio line;
 2. `qwen3.5:0.8b` (Q8_0) for typed decisions, constrained classification only.
 
 Both models must be free to obtain and run locally. Paid weights and paid
@@ -26,28 +26,26 @@ and file replay, programmatic replay pause, resume, and stop
 (`ReplaySession.pause`, `ReplaySession.resume`, and `ReplaySession.stop` in
 `src/raceengineer/sources.py`; the demo has no `--pause`, `--resume`, or
 `--stop` flag; Ctrl+C remains a process stop), text CLI output, an
-optional UDP metadata probe, and a deterministic low-fuel rule. A `fuel_low`
-alert also prints a versioned radio
-line (`raceengineer.radio` version 1, `source: rule`) whose driver text is
-"Box, box. Questo giro." The alert log message stays English.
+optional UDP metadata probe, and a deterministic low-fuel rule. Rules
+detect events and do not speak. With `--engineer`, local Ollama (`qwen3.5:4b`,
+temperature 0) writes every radio line in its own words (`raceengineer.radio`
+version 1, `source: llm`); the phrase book is its baggage and is never aired
+as written. `--ollama-url` and `--engineer-model` select another Ollama host
+or model. A deterministic stand-in in `src/raceengineer/decision.py` answers
+`urgency` (`now`, `normal`, `calm`: 1, 3, or 6 seconds to answer) and
+`grounded_or_reject`. There is no canned fallback: a down model, a late or
+empty reply, or a rejected line leaves the radio silent, prints `error:
+engineer silent`, and the run exits 1. The selected neural decision model's
+grammar-constrained path is not implemented.
 `--speak` says each printed radio line with local Piper Italian when the
 selected `it_IT` model is installed, and otherwise Windows SAPI or Linux
-espeak-ng, rule line first and
-the llm line when one is printed. `--voice` selects Paola, Riccardo, Serena,
-or Dii. The default spoken voice is Serena. Engineer Profiles are not implemented. A deterministic gate
-in `src/raceengineer/decision.py` answers `canned_or_brief` and
-`grounded_or_reject`. It is code, not a neural decision model. `--brief` is
-the declared brief skill. When the gate answers `brief`, local Ollama
-(`qwen3.5:4b`, temperature 0) may add a second radio line (`source: llm`)
-after the rule line; `--ollama-url` and `--brief-model` select another
-Ollama host or model. The briefing gets one attempt with a 3 second limit;
-a late line is worse than the rule line alone. A down model, an empty reply, or a `reject` label leaves the rule line
-in place. A briefing that names a track place, or that reads like a log,
-is rejected. Ordinary Italian is kept. The selected neural decision model's
-grammar-constrained path is not implemented; the current gate remains
-deterministic. The recovery slice does not define the production
-hardware. Critical alerts stay in rules code; they are not delegated to
-either model.
+espeak-ng. `--voice` selects Paola, Riccardo, Serena, or Dii. The default
+spoken voice is Serena. Engineer Profiles are not implemented. The recovery
+slice does not define the production hardware. Driver speech recognition
+(physical push-to-talk button, hardware not chosen) and race-to-race memory
+are planned next.
+The offline model-evaluation corpus in `tests/model_eval` still describes the
+retired `canned_or_brief` question and a rule fallback; it needs updating.
 
 Runtime and offline tests use only the Python standard library. Python 3.10 or
 newer is required. Run instructions and recording semantics are documented in

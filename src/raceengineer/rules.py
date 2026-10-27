@@ -9,7 +9,6 @@ from .model import Sample
 FUEL_LOW_THRESHOLD = 10.0
 FUEL_RESET_THRESHOLD = 12.0
 FUEL_LOW_MESSAGE = "Fuel low. Box this lap."
-FUEL_LOW_RADIO_TEXT = "Box, box. Questo giro."
 
 
 @dataclass
@@ -46,11 +45,6 @@ class Radio:
             {"format": "raceengineer.radio", "version": 1, "radio": asdict(self)},
             sort_keys=True, separators=(",", ":"), allow_nan=False,
         )
-
-
-def rule_radio(alert: Alert) -> Radio:
-    """Driver-facing line for a fuel_low alert. The log message stays English."""
-    return Radio("rule", alert.type, FUEL_LOW_RADIO_TEXT, alert.timestamp)
 
 
 class RulesEngine:
