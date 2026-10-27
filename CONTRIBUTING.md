@@ -20,11 +20,12 @@ Both models must be free to obtain and run locally. Paid weights and
 paid cloud APIs are not acceptable.
 
 Product VRAM guidance is 8 GB minimum and 12 GB recommended. See
-`docs/MODEL_SELECTION.md`. The exact Radeon SKU, Radeon qualification,
-and final Linux reference-machine configuration remain open. Windows/RTX
-3050 measurements are development evidence only and do not qualify Radeon.
+`docs/MODEL_SELECTION.md`. The GPU vendor is not fixed. The exact card,
+Linux qualification, and final Linux reference-machine configuration remain
+open. Windows/RTX 3050 measurements are development evidence only and do not
+qualify the Linux reference machine.
 
-Helpful contributions right now are reproducible Linux/Radeon compatibility,
+Helpful contributions right now are reproducible Linux GPU compatibility,
 co-residency, VRAM, and performance evidence for the selected pair, with the
 hardware and runtime named. The neural grammar path remains unimplemented;
 current decisions use deterministic code. Unrelated feature work should wait.

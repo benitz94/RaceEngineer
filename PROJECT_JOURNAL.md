@@ -1,5 +1,31 @@
 # PROJECT_JOURNAL.md
 
+## GPU Vendor Not Fixed — 2026-10-27
+
+Decision:
+
+The Linux reference platform no longer requires an AMD Radeon. Any GPU
+supported by the local inference runtime that meets the VRAM floor (8 GB
+minimum, 12 GB recommended) is acceptable. The exact card remains unchosen.
+
+Reason:
+
+The owner removed the vendor constraint. Measurements on one GPU or OS still
+do not qualify another. Earlier entries that name an AMD Radeon describe the
+decision at that time.
+
+## Short Briefing Deadline — 2026-10-27
+
+Decision:
+
+An optional language-model briefing gets one attempt with a 3 second limit.
+If it is late, fails, or is rejected, only the rule radio line is aired.
+
+Reason:
+
+A pit call that arrives late is worse than the rule line alone. The model must
+not delay the session.
+
 ## Automatic Development Releases — 2026-10-15
 
 Decision:

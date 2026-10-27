@@ -26,7 +26,7 @@ projects.
 - **Evidence integrity:** benchmarks identify hardware, OS, model,
   quantization where relevant, runtime, and test conditions. Label fake and
   synthetic results explicitly; a fake harness score is not a real model
-  benchmark. Windows/NVIDIA evidence does not qualify Linux/AMD Radeon.
+  benchmark. Evidence from one GPU or OS does not qualify another.
 - **Requirement discipline:** roadmap possibilities are not approved
   requirements. Stay inside the approved specification and bounded task.
 - **Repository language:** documentation, files, comments, and commit messages
@@ -44,7 +44,8 @@ radio remains available on optional-model failure.
 
 Product VRAM guidance is 8 GB minimum and 12 GB recommended. Windows/RTX 3050
 measurements are development evidence only. The intended platform is
-Linux/AMD Radeon; exact SKU, Radeon qualification, final reference-machine
+Linux with a GPU of any vendor that meets the VRAM floor; exact card, Linux
+qualification, final reference-machine
 configuration, performance thresholds, simulator adoption, and distribution
 remain unresolved. Consult [MODEL_SELECTION.md](../MODEL_SELECTION.md),
 [DECISION_MODEL.md](../DECISION_MODEL.md), and

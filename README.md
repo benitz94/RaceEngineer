@@ -23,9 +23,9 @@ The two local models are chosen. Details and the measured VRAM floor are in
    declared labels only. If the grammar fails or the call times out, rules
    keep the radio.
 
-Product VRAM floor: 8 GB minimum, 12 GB recommended. The expected GPU family
-is still an AMD Radeon. The exact card is not chosen. NVIDIA development
-traces are not Radeon qualification.
+Product VRAM floor: 8 GB minimum, 12 GB recommended. The GPU vendor is not
+fixed and the exact card is not chosen. Development bench traces do not
+qualify the Linux reference machine.
 
 ## Project Status
 
@@ -54,7 +54,7 @@ Release publication is serialized, with up to 100 pending runs queued by
 GitHub Actions. Versions follow publication order, which can differ from push
 order when test runs finish at different times. Existing releases are retained.
 These releases are development snapshots; their version numbers do not establish
-simulator support or Linux/AMD hardware qualification.
+simulator support or Linux hardware qualification.
 
 ## Initial Technology
 
@@ -134,8 +134,9 @@ not introduce simulator-specific logic into the core.
 
 ### Hardware Independence
 
-The reference platform is a Linux machine with an AMD Radeon GPU. The exact
-card is not chosen. The architecture must not hard-code a single SKU.
+The reference platform is a Linux machine with a GPU that meets the VRAM
+floor. The GPU vendor is not fixed and the exact card is not chosen. The
+architecture must not hard-code a single vendor or SKU.
 
 The hardware may evolve based on real-world performance measurements and
 needs.
@@ -184,11 +185,11 @@ The prototype will not initially include:
 
 ## Planned Initial Hardware
 
-Do not buy a GPU until the exact Radeon SKU is chosen. The floor is known:
+The GPU vendor is not fixed. The floor is known:
 
 - a Linux workstation or mini PC;
-- an AMD Radeon with at least 8 GB VRAM, 12 GB recommended, for
-  `qwen3.5:4b` and `qwen3.5:0.8b` together;
+- a GPU supported by the local inference runtime, with at least 8 GB VRAM,
+  12 GB recommended, for `qwen3.5:4b` and `qwen3.5:0.8b` together;
 - Ethernet or Wi-Fi connection;
 - USB lavalier microphone, not required for the first prototype;
 - local audio output (DAC, mixer, and headphones as needed).

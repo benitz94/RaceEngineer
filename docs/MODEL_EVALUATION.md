@@ -157,9 +157,9 @@ the exact model name, runtime, and environment when doing a real run.
 
 Functional output evaluation and hardware qualification are separate. This
 harness does not select a GPU, measure sustained load, establish concurrency
-limits, or prove target-platform latency. NVIDIA measurements are not AMD
-qualification. Results from an NVIDIA system must never be presented as Radeon
-VRAM, performance, or compatibility evidence.
+limits, or prove target-platform latency. Results from one GPU or OS must
+never be presented as VRAM, performance, or compatibility evidence for
+another.
 
 The selected language and decision pair is recorded in `docs/MODEL_SELECTION.md`.
 This harness does not change that selection. It contains no unperformed

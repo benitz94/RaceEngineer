@@ -156,6 +156,33 @@ class BriefingTests(unittest.TestCase):
                 brief_alert(_alert(), opener=opener)
             self.assertEqual(calls, [1])
 
+    def test_custom_ollama_url_and_model(self):
+        captured = {}
+
+        def opener(request, timeout):
+            captured["url"] = request.full_url
+            captured["model"] = json.loads(request.data.decode())["model"]
+            return _Response({"message": {"content": SENTENCE}})
+
+        sentence = brief_alert(_alert(), opener=opener, base_url="http://192.168.1.20:11434/", model="phi4-mini")
+        self.assertEqual(sentence, SENTENCE)
+        self.assertEqual(captured, {"url": "http://192.168.1.20:11434/api/chat", "model": "phi4-mini"})
+
+    def test_cli_passes_ollama_url_and_model(self):
+        with patch("raceengineer.demo.brief_alert", return_value=SENTENCE) as brief:
+            radios, _stderr = self.run_cli([
+                "--source", "synthetic", "--radio-only", "--brief",
+                "--ollama-url", "http://192.168.1.20:11434", "--brief-model", "phi4-mini",
+            ])
+        self.assertEqual(brief.call_args.kwargs, {"base_url": "http://192.168.1.20:11434", "model": "phi4-mini"})
+        self.assertEqual([radio["radio"]["source"] for radio in radios], ["rule", "llm"])
+
+    def test_cli_rejects_bad_ollama_url(self):
+        for url in ("127.0.0.1:11434", "ftp://host:11434", "http://"):
+            with patch("sys.stderr", io.StringIO()), self.assertRaises(SystemExit) as raised:
+                main(["--source", "synthetic", "--count", "0", "--brief", "--ollama-url", url])
+            self.assertEqual(raised.exception.code, 2)
+
     def test_paths_without_a_briefing_do_not_use_the_network(self):
         with patch("socket.create_connection", side_effect=OSError("blocked")) as connect, \
              patch("urllib.request.urlopen", side_effect=OSError("blocked")) as urlopen:
@@ -188,7 +215,7 @@ class BriefingTests(unittest.TestCase):
              patch("urllib.request.urlopen", side_effect=opener):
             radios, stderr = self.run_cli(["--source", "synthetic", "--radio-only", "--brief"])
         self.assertEqual(stderr, "")
-        self.assertEqual(captured["timeout"], 15)
+        self.assertEqual(captured["timeout"], 3)
         self.assertEqual([radio["format"] for radio in radios], ["raceengineer.radio", "raceengineer.radio"])
         self.assertEqual([radio["version"] for radio in radios], [1, 1])
         rule, briefing = (radio["radio"] for radio in radios)
@@ -326,26 +353,7 @@ class BriefingTests(unittest.TestCase):
         ])
         self.assertNotIn("briefing unavailable", error.getvalue())
 
-    def test_rejected_brief_is_retried_once_then_aired(self):
-        replies = iter(["tangente sud", "Ho dieci litri di benzina nel serbatoio, box."])
-        calls = []
-
-        def opener(request, timeout):
-            body = json.loads(request.data.decode())
-            calls.append(body["options"]["temperature"])
-            return _Response({"message": {"content": next(replies)}})
-
-        with patch("urllib.request.urlopen", side_effect=opener), \
-             patch("socket.create_connection", side_effect=OSError("blocked")):
-            radios, stderr = self.run_cli(["--source", "synthetic", "--radio-only", "--brief"])
-        self.assertEqual(stderr, "")
-        self.assertEqual(calls, [0, 0])
-        self.assertEqual([radio["radio"]["text"] for radio in radios], [
-            "Box, box. Questo giro.",
-            "Ho dieci litri di benzina nel serbatoio, box.",
-        ])
-
-    def test_second_reject_keeps_the_rule_radio(self):
+    def test_reject_keeps_the_rule_radio_without_retry(self):
         calls = []
 
         def opener(request, timeout):
@@ -355,7 +363,7 @@ class BriefingTests(unittest.TestCase):
         with patch("urllib.request.urlopen", side_effect=opener), \
              patch("socket.create_connection", side_effect=OSError("blocked")):
             radios, stderr = self.run_cli(["--source", "synthetic", "--radio-only", "--brief"])
-        self.assertEqual(calls, [1, 1])
+        self.assertEqual(calls, [1])
         self.assertEqual(len(radios), 1)
         self.assertEqual(radios[0]["radio"]["text"], "Box, box. Questo giro.")
         self.assertEqual(stderr.splitlines(), ["error: brief rejected"])

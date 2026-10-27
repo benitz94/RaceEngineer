@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-10-17
+Last updated: 2026-10-27
 
 ## Current State
 
@@ -14,9 +14,10 @@ cloud APIs are not acceptable. Intent and constraints are in
 `docs/DECISION_MODEL.md`.
 
 Product VRAM guidance is 8 GB minimum and 12 GB recommended. The intended
-platform remains Linux with an AMD Radeon. The exact SKU, Radeon qualification,
-and final reference-machine configuration remain unresolved. Windows/RTX 3050
-measurements are development evidence only and do not qualify Radeon. See
+platform remains Linux. The GPU vendor is not fixed. The exact card, Linux
+qualification, and final reference-machine configuration remain unresolved.
+Windows/RTX 3050 measurements are development evidence only and do not qualify
+the Linux reference machine. See
 `docs/MODEL_SELECTION.md`. Raspberry Pi is not a target.
 
 A small simulator-independent recovery slice already exists in Python: a
@@ -30,14 +31,17 @@ alert also prints a versioned radio
 line (`raceengineer.radio` version 1, `source: rule`) whose driver text is
 "Box, box. Questo giro." The alert log message stays English.
 `--speak` says each printed radio line with local Piper Italian when the
-selected `it_IT` model is installed, and otherwise Windows speech, rule line first and
+selected `it_IT` model is installed, and otherwise Windows SAPI or Linux
+espeak-ng, rule line first and
 the llm line when one is printed. `--voice` selects Paola, Riccardo, Serena,
 or Dii. The default spoken voice is Serena. Engineer Profiles are not implemented. A deterministic gate
 in `src/raceengineer/decision.py` answers `canned_or_brief` and
 `grounded_or_reject`. It is code, not a neural decision model. `--brief` is
 the declared brief skill. When the gate answers `brief`, local Ollama
 (`qwen3.5:4b`, temperature 0) may add a second radio line (`source: llm`)
-after the rule line. A rejected line is tried once more. A down model, an empty reply, or a `reject` label leaves the rule line
+after the rule line; `--ollama-url` and `--brief-model` select another
+Ollama host or model. The briefing gets one attempt with a 3 second limit;
+a late line is worse than the rule line alone. A down model, an empty reply, or a `reject` label leaves the rule line
 in place. A briefing that names a track place, or that reads like a log,
 is rejected. Ordinary Italian is kept. The selected neural decision model's
 grammar-constrained path is not implemented; the current gate remains
@@ -78,7 +82,7 @@ checks and do not overwrite local guidance automatically.
 
 ## Next Objective
 
-Qualify the selected pair on Linux/AMD Radeon, select the exact Radeon SKU,
+Qualify the selected pair on Linux, select the exact GPU (vendor not fixed),
 and define the reference-machine configuration using the documented VRAM
 guidance. Quantitative performance thresholds remain to be established.
 Contributors should help with this hardware/platform work before proposing
@@ -103,7 +107,7 @@ telemetry and GT7's community heartbeat/encrypted UDP path. No PS5 packet
 capture has been performed. `docs/PS5_TELEMETRY_FIELD_TEST.md` now records
 a Windows PowerShell transport experiment, decoder follow-up, and evidence
 checklist. This is preparatory Phase 5 research, not simulator adoption or
-Linux/AMD qualification.
+Linux qualification.
 
 Product vision clarified in discussion: beyond one-way rule-to-radio output,
 the driver should eventually be able to reject a pit instruction, ask whether

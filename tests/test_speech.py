@@ -1,4 +1,5 @@
 import io
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -6,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from raceengineer.demo import main
-from raceengineer.speech import PIPER_NOTICE, find_italian_model, speak
+from raceengineer.speech import ESPEAK_NOTICE, PIPER_NOTICE, find_italian_model, find_piper, speak
 import raceengineer.speech as speech
 
 
@@ -14,7 +15,8 @@ class SpeechTests(unittest.TestCase):
     def test_missing_piper_uses_sapi_once(self):
         speech._NOTICE_SENT = False
         error = io.StringIO()
-        with patch("raceengineer.speech.find_piper", return_value=None), \
+        with patch("raceengineer.speech._on_windows", return_value=True), \
+             patch("raceengineer.speech.find_piper", return_value=None), \
              patch("raceengineer.speech.subprocess.run") as run, \
              patch("sys.stderr", error):
             run.return_value = subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="")
@@ -25,6 +27,68 @@ class SpeechTests(unittest.TestCase):
         for call in run.call_args_list:
             self.assertEqual(call.args[0][0], "powershell.exe")
             self.assertIn("System.Speech", call.args[0][-1])
+
+    def test_missing_piper_uses_espeak_on_linux(self):
+        speech._NOTICE_SENT = False
+        error = io.StringIO()
+        with patch("raceengineer.speech._on_windows", return_value=False), \
+             patch("raceengineer.speech.find_piper", return_value=None), \
+             patch("raceengineer.speech.shutil.which", return_value="/usr/bin/espeak-ng"), \
+             patch("raceengineer.speech.subprocess.run") as run, \
+             patch("sys.stderr", error):
+            run.return_value = subprocess.CompletedProcess(args=[], returncode=0, stdout=b"", stderr=b"")
+            speak("Box, box. Questo giro.")
+        self.assertEqual(error.getvalue().splitlines(), [ESPEAK_NOTICE])
+        self.assertEqual(run.call_args.args[0], ["/usr/bin/espeak-ng", "-v", "it", "--stdin"])
+        self.assertEqual(run.call_args.kwargs["input"], "Box, box. Questo giro.".encode("utf-8"))
+
+    def test_missing_espeak_is_a_speech_error(self):
+        speech._NOTICE_SENT = True
+        with patch("raceengineer.speech._on_windows", return_value=False), \
+             patch("raceengineer.speech.find_piper", return_value=None), \
+             patch("raceengineer.speech.shutil.which", return_value=None), \
+             patch("raceengineer.speech.subprocess.run") as run, \
+             self.assertRaises(RuntimeError):
+            speak("Box, box. Questo giro.")
+        run.assert_not_called()
+
+    def test_linux_playback_prefers_pipewire(self):
+        installed = {"pw-play": "/usr/bin/pw-play", "aplay": "/usr/bin/aplay"}
+        with patch("raceengineer.speech._on_windows", return_value=False), \
+             patch("raceengineer.speech.shutil.which", side_effect=installed.get), \
+             patch("raceengineer.speech.subprocess.run") as run:
+            run.return_value = subprocess.CompletedProcess(args=[], returncode=0, stdout=b"", stderr=b"")
+            speech._play_wav(Path("radio.wav"))
+        self.assertEqual(run.call_args.args[0], ["/usr/bin/pw-play", "radio.wav"])
+
+    def test_linux_playback_falls_back_to_aplay(self):
+        with patch("raceengineer.speech._on_windows", return_value=False), \
+             patch("raceengineer.speech.shutil.which", side_effect={"aplay": "/usr/bin/aplay"}.get), \
+             patch("raceengineer.speech.subprocess.run") as run:
+            run.return_value = subprocess.CompletedProcess(args=[], returncode=0, stdout=b"", stderr=b"")
+            speech._play_wav(Path("radio.wav"))
+        self.assertEqual(run.call_args.args[0], ["/usr/bin/aplay", "-q", "radio.wav"])
+
+    def test_linux_playback_without_player_fails(self):
+        with patch("raceengineer.speech._on_windows", return_value=False), \
+             patch("raceengineer.speech.shutil.which", return_value=None), \
+             patch("raceengineer.speech.subprocess.run") as run, \
+             self.assertRaises(RuntimeError):
+            speech._play_wav(Path("radio.wav"))
+        run.assert_not_called()
+
+    @unittest.skipIf(os.name == "nt", "POSIX executable bit")
+    def test_finder_accepts_linux_piper_binary(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            binary = root / "piper" / "piper"
+            binary.parent.mkdir()
+            binary.write_bytes(b"x")
+            binary.chmod(0o755)
+            with patch("raceengineer.speech._search_roots", return_value=[root]), \
+                 patch("raceengineer.speech.shutil.which", return_value=None):
+                found = find_piper()
+        self.assertEqual(found, binary)
 
     def test_piper_writes_a_wav_and_does_not_use_sapi(self):
         played = []

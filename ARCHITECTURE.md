@@ -38,7 +38,7 @@ The architecture must ensure:
 
 - local operation without mandatory cloud services;
 - independence from the development PC;
-- execution on a Linux machine with an AMD Radeon GPU when local models are used;
+- execution on a Linux machine with a GPU that meets the VRAM floor when local models are used;
 - core development and validation without a connected simulator;
 - separation between simulators and core logic;
 - deterministic behavior for critical decisions;
@@ -258,9 +258,11 @@ Records events, alerts, errors, and diagnostic metrics.
 Converts approved messages into audio without requiring cloud services.
 
 The prototype uses Piper when the selected Italian voice and matching config
-are installed, with Windows SAPI fallback when Piper or that voice is missing.
-Serena is the default voice. WAV playback currently uses Windows PowerShell;
-Linux production speech/playback qualification remains open.
+are installed, with a Windows SAPI or Linux espeak-ng fallback when Piper or
+that voice is missing. Serena is the default voice. WAV playback uses Windows
+PowerShell, or `pw-play`, `paplay`, or `aplay` on Linux. The Linux path is
+covered only by mocked offline tests; Linux production speech/playback
+qualification remains open.
 
 A TTS failure must not stop telemetry reception or analysis.
 
@@ -315,10 +317,10 @@ Examples:
 ## Performance
 
 The measured development bench is Windows with an RTX 3050 6 GB. The intended
-reference platform is Linux with an AMD Radeon; the exact SKU and final machine
-configuration remain unresolved. Product VRAM guidance is 8 GB minimum and
-12 GB recommended. Windows/NVIDIA measurements do not qualify Radeon. See
-`docs/MODEL_SELECTION.md`.
+reference platform is Linux; the GPU vendor is not fixed, and the exact card
+and final machine configuration remain unresolved. Product VRAM guidance is
+8 GB minimum and 12 GB recommended. Development bench measurements do not
+qualify the Linux reference machine. See `docs/MODEL_SELECTION.md`.
 
 Core validation on the reference Linux machine must occur before selecting
 and implementing the adapter for the first real simulator.
@@ -352,7 +354,7 @@ Before declaring support for Gran Turismo 7, the following must be evaluated:
 - session, lap, and car identification;
 - any required transformations or decoding;
 - stability across game updates;
-- Linux and AMD Radeon compatibility for optional local models;
+- Linux GPU compatibility for optional local models;
 - licensing, distribution, and documentation considerations.
 
 This evaluation will take place after complete core validation on the

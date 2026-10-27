@@ -37,8 +37,9 @@ cloud APIs are not acceptable. See `docs/DECISION_MODEL.md`.
 
 The documented product VRAM floor is established: 8 GB minimum, 12 GB
 recommended. See `docs/MODEL_SELECTION.md`. Windows/RTX 3050 measurements are
-development evidence only. The exact AMD Radeon SKU, Radeon qualification,
-and final reference-machine configuration remain unresolved. Later phases
+development evidence only. The GPU vendor is not fixed. The exact card,
+Linux qualification, and final reference-machine configuration remain
+unresolved. Later phases
 that assume a target machine still depend on this hardware/platform work.
 
 ## Phase 0 — Project Documentation and Foundations
@@ -55,8 +56,8 @@ Activities:
 - define the minimum requirements for the first prototype;
 - define the initial Python project structure (prototype structure exists);
 - choose a free language model and a free typed decision model (selected);
-- derive VRAM and AMD Radeon requirements from those models (VRAM guidance
-  established; Radeon qualification remains open);
+- derive VRAM requirements from those models (VRAM guidance established;
+  Linux GPU qualification remains open);
 - document the available hardware configuration after that choice.
 
 Completion criteria:
@@ -286,7 +287,7 @@ These do not finalize production formats or qualify the Linux platform.
 
 The following decisions and qualification work remain open:
 
-- exact AMD Radeon SKU and qualification of the selected pair;
+- exact GPU and Linux qualification of the selected pair;
 - final reference-machine configuration;
 - Python runtime environment on the reference machine;
 - initial Linux distribution;

@@ -1,4 +1,8 @@
-"""Local Italian speech: Piper when a voice is installed, otherwise Windows SAPI."""
+"""Local Italian speech: Piper when a voice is installed, otherwise the OS fallback.
+
+Windows falls back to SAPI and plays WAV files through PowerShell. Linux falls
+back to espeak-ng and plays WAV files through pw-play, paplay, or aplay.
+"""
 
 import os
 from pathlib import Path
@@ -8,6 +12,7 @@ import sys
 import tempfile
 
 PIPER_NOTICE = "piper unavailable, using SAPI"
+ESPEAK_NOTICE = "piper unavailable, using espeak-ng"
 _NOTICE_SENT = False
 
 _SAPI_SCRIPT = r"""
@@ -28,6 +33,13 @@ $ErrorActionPreference = 'Stop'
 $player = New-Object System.Media.SoundPlayer $env:RACEENGINEER_WAV
 $player.PlaySync()
 """
+
+# First installed player wins: PipeWire, then PulseAudio, then ALSA.
+_POSIX_PLAYERS = (("pw-play",), ("paplay",), ("aplay", "-q"))
+
+
+def _on_windows() -> bool:
+    return os.name == "nt"
 
 
 def cache_dir() -> Path:
@@ -63,6 +75,7 @@ def find_piper() -> Path | None:
     for root in _search_roots():
         if root.is_dir():
             found.extend(root.rglob("piper.exe"))
+            found.extend(path for path in root.rglob("piper") if os.access(path, os.X_OK))
     unique = []
     seen = set()
     for path in found:
@@ -121,23 +134,33 @@ def find_italian_model(voice: str = "serena") -> Path | None:
     return found[0][1]
 
 
-def _run_powershell(script: str, env: dict) -> None:
+def _run(command: list[str], failure: str, **kwargs) -> None:
     try:
         completed = subprocess.run(
-            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
-            env=env,
+            command,
             capture_output=True,
-            text=True,
             check=False,
             timeout=30,
+            **kwargs,
         )
     except subprocess.TimeoutExpired:
         raise RuntimeError("timed out") from None
     except OSError as error:
-        raise RuntimeError(f"could not run powershell.exe: {error}") from error
+        raise RuntimeError(f"could not run {Path(command[0]).name}: {error}") from error
     if completed.returncode != 0:
-        detail = (completed.stderr or completed.stdout or "Windows speech failed").strip()
-        raise RuntimeError(detail)
+        detail = completed.stderr or completed.stdout or failure
+        if isinstance(detail, bytes):
+            detail = detail.decode("utf-8", errors="replace")
+        raise RuntimeError(detail.strip() or failure)
+
+
+def _run_powershell(script: str, env: dict) -> None:
+    _run(
+        ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
+        "Windows speech failed",
+        env=env,
+        text=True,
+    )
 
 
 def _speak_sapi(text: str) -> None:
@@ -146,10 +169,25 @@ def _speak_sapi(text: str) -> None:
     _run_powershell(_SAPI_SCRIPT, env)
 
 
+def _speak_espeak(text: str) -> None:
+    binary = shutil.which("espeak-ng")
+    if binary is None:
+        raise RuntimeError("espeak-ng not found")
+    _run([binary, "-v", "it", "--stdin"], "espeak-ng failed", input=text.encode("utf-8"))
+
+
 def _play_wav(path: Path) -> None:
-    env = os.environ.copy()
-    env["RACEENGINEER_WAV"] = str(path)
-    _run_powershell(_PLAY_SCRIPT, env)
+    if _on_windows():
+        env = os.environ.copy()
+        env["RACEENGINEER_WAV"] = str(path)
+        _run_powershell(_PLAY_SCRIPT, env)
+        return
+    for player in _POSIX_PLAYERS:
+        binary = shutil.which(player[0])
+        if binary is not None:
+            _run([binary, *player[1:], str(path)], f"{player[0]} failed")
+            return
+    raise RuntimeError("no WAV player found (pw-play, paplay, or aplay)")
 
 
 def _try_piper(text: str, voice: str) -> bool:
@@ -192,11 +230,15 @@ def _try_piper(text: str, voice: str) -> bool:
 
 
 def speak(text: str, voice: str = "serena") -> None:
-    """Speak one radio line with the selected Piper voice, or Windows SAPI when it is missing."""
+    """Speak one radio line with the selected Piper voice, or the OS fallback when it is missing."""
     global _NOTICE_SENT
     if _try_piper(text, voice):
         return
+    windows = _on_windows()
     if not _NOTICE_SENT:
-        print(PIPER_NOTICE, file=sys.stderr)
+        print(PIPER_NOTICE if windows else ESPEAK_NOTICE, file=sys.stderr)
         _NOTICE_SENT = True
-    _speak_sapi(text)
+    if windows:
+        _speak_sapi(text)
+    else:
+        _speak_espeak(text)

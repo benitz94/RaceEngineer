@@ -3,7 +3,7 @@
 import argparse
 import json
 import sys
-from .briefing import BriefRejected, BriefingUnavailable, _accept_radio_text, brief_alert
+from .briefing import MODEL, OLLAMA_URL, BriefRejected, BriefingUnavailable, _accept_radio_text, brief_alert, chat_url
 from .decision import answer
 from .recording import encode
 from .rules import FUEL_LOW_THRESHOLD, Radio, RulesEngine, rule_radio
@@ -34,9 +34,11 @@ def main(argv=None):
     output.add_argument("--alerts-only", action="store_true", help="suppress sample output")
     output.add_argument("--samples-only", action="store_true", help="print replayable sample recordings only")
     output.add_argument("--radio-only", action="store_true", help="print radio lines only")
-    parser.add_argument("--speak", action="store_true", help="speak radio lines with local Piper Italian, or Windows speech")
+    parser.add_argument("--speak", action="store_true", help="speak radio lines with local Piper Italian, or Windows SAPI / Linux espeak-ng")
     parser.add_argument("--voice", choices=("paola", "riccardo", "serena", "dii"), default="serena", help="Piper Italian voice")
     parser.add_argument("--brief", action="store_true", help="ask local Ollama for a briefing after a rule radio line")
+    parser.add_argument("--ollama-url", default=OLLAMA_URL, help="Ollama base URL for --brief")
+    parser.add_argument("--brief-model", default=MODEL, help="Ollama model for --brief")
     parser.add_argument("--fuel-low-threshold", type=float, default=FUEL_LOW_THRESHOLD)
     args = parser.parse_args(argv)
     if args.source == "file" and not args.path:
@@ -49,6 +51,12 @@ def main(argv=None):
         parser.error("--count must be nonnegative")
     if not 0 <= args.port <= 65535:
         parser.error("--port must be between 0 and 65535")
+    try:
+        chat_url(args.ollama_url)
+    except ValueError as error:
+        parser.error(str(error))
+    if not args.brief_model.strip():
+        parser.error("--brief-model must not be empty")
     if args.source == "udp" and (args.alerts_only or args.samples_only or args.radio_only):
         parser.error("sample, alert, and radio output flags are not supported for UDP metadata")
     try:
@@ -78,28 +86,18 @@ def main(argv=None):
                     continue
                 if answer("canned_or_brief", {"brief": args.brief}) != "brief":
                     continue
+                # One attempt: a late pit call is worse than the rule line alone.
                 aired = None
-                saw_reject = False
-                for _attempt in range(2):
+                try:
+                    candidate = brief_alert(alert, base_url=args.ollama_url, model=args.brief_model)
+                except BriefingUnavailable as error:
+                    print(f"error: briefing unavailable: {error}", file=sys.stderr)
+                else:
                     try:
-                        candidate = brief_alert(alert)
-                    except BriefingUnavailable as error:
-                        print(f"error: briefing unavailable: {error}", file=sys.stderr)
-                        aired = None
-                        saw_reject = False
-                        break
-                    if answer("grounded_or_reject", {"text": candidate, "fuel": alert.fuel}) == "reject":
-                        saw_reject = True
-                        continue
-                    try:
+                        if answer("grounded_or_reject", {"text": candidate, "fuel": alert.fuel}) == "reject":
+                            raise BriefRejected()
                         aired = _accept_radio_text(candidate)
                     except BriefRejected:
-                        saw_reject = True
-                        continue
-                    saw_reject = False
-                    break
-                else:
-                    if saw_reject:
                         print("error: brief rejected", file=sys.stderr)
                 if aired:
                     llm = Radio("llm", radio.type, aired, radio.timestamp)

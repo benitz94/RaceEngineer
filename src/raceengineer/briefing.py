@@ -7,11 +7,12 @@ involved, and a failed request must not replace the rule radio.
 import json
 import re
 import urllib.error
+import urllib.parse
 import urllib.request
 
-CHAT_URL = "http://127.0.0.1:11434/api/chat"
+OLLAMA_URL = "http://127.0.0.1:11434"
 MODEL = "qwen3.5:4b"
-TIMEOUT_SECONDS = 15
+TIMEOUT_SECONDS = 3
 SYSTEM_PROMPT = (
     "You are a pit-wall engineer. Speak Italian. At most two short sentences. "
     "docs/RADIO_PHRASES.md is register training, not a script and not a whitelist. "
@@ -112,7 +113,15 @@ def _example_lines(fuel) -> tuple[str, str]:
     )
 
 
-def _payload(user: str, fuel, *, include_think: bool) -> dict:
+def chat_url(base_url: str) -> str:
+    """Ollama chat endpoint under a base URL such as http://host:11434."""
+    parsed = urllib.parse.urlsplit(base_url)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise ValueError(f"Ollama URL must be http(s)://host[:port], got {base_url!r}")
+    return base_url.rstrip("/") + "/api/chat"
+
+
+def _payload(user: str, fuel, model: str, *, include_think: bool) -> dict:
     spoken_cue = json.dumps({"fuel": fuel}, sort_keys=True, separators=(",", ":"), allow_nan=False)
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     for line in _example_lines(fuel):
@@ -120,7 +129,7 @@ def _payload(user: str, fuel, *, include_think: bool) -> dict:
         messages.append({"role": "assistant", "content": line})
     messages.append({"role": "user", "content": user})
     payload = {
-        "model": MODEL,
+        "model": model,
         "messages": messages,
         "stream": False,
         "options": {"temperature": 0},
@@ -130,9 +139,9 @@ def _payload(user: str, fuel, *, include_think: bool) -> dict:
     return payload
 
 
-def _post(payload, opener, timeout) -> bytes:
+def _post(url, payload, opener, timeout) -> bytes:
     request = urllib.request.Request(
-        CHAT_URL,
+        url,
         data=json.dumps(payload, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8"),
         headers={"Content-Type": "application/json", "Accept": "application/json"},
         method="POST",
@@ -141,15 +150,15 @@ def _post(payload, opener, timeout) -> bytes:
         return response.read()
 
 
-def _chat(user, fuel, opener, timeout) -> bytes:
+def _chat(url, model, user, fuel, opener, timeout) -> bytes:
     try:
-        return _post(_payload(user, fuel, include_think=True), opener, timeout)
+        return _post(url, _payload(user, fuel, model, include_think=True), opener, timeout)
     except urllib.error.HTTPError as error:
         detail = _error_detail(error)
         if not _think_rejected(error.code, detail):
             raise BriefingUnavailable(_http_failure(error.code, detail)) from error
     # Older Ollama builds reject the think field; retry once without it.
-    return _post(_payload(user, fuel, include_think=False), opener, timeout)
+    return _post(url, _payload(user, fuel, model, include_think=False), opener, timeout)
 
 
 def _unwrap(text: str) -> str:
@@ -198,7 +207,7 @@ def _unavailable(error: BaseException) -> BriefingUnavailable:
     return BriefingUnavailable(text or "unavailable")
 
 
-def brief_alert(alert, opener=None, timeout=TIMEOUT_SECONDS) -> str:
+def brief_alert(alert, opener=None, timeout=TIMEOUT_SECONDS, base_url=OLLAMA_URL, model=MODEL) -> str:
     """Return the model sentence for a fuel_low alert.
 
     Raises BriefingUnavailable when Ollama is down, times out, or returns
@@ -206,6 +215,7 @@ def brief_alert(alert, opener=None, timeout=TIMEOUT_SECONDS) -> str:
     """
     if opener is None:
         opener = urllib.request.urlopen
+    url = chat_url(base_url)
     try:
         user = json.dumps(
             {"fuel": alert.fuel, "timestamp": alert.timestamp, "type": alert.type},
@@ -214,7 +224,7 @@ def brief_alert(alert, opener=None, timeout=TIMEOUT_SECONDS) -> str:
     except (TypeError, ValueError) as error:
         raise BriefingUnavailable(_one_line(error) or "unavailable") from error
     try:
-        raw = _chat(user, alert.fuel, opener, timeout)
+        raw = _chat(url, model, user, alert.fuel, opener, timeout)
     except BriefingUnavailable:
         raise
     except urllib.error.HTTPError as error:

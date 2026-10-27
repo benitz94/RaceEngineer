@@ -5,7 +5,7 @@
 
 ## Purpose and limits
 
-Prove that an installed F1 title and Gran Turismo 7 can send live UDP telemetry from a PS5 to the development PC. Start with **F1** because the game exposes an officially documented UDP output setting. Then test **GT7**, whose community-documented protocol requires heartbeat and decryption. These are **transport tests**; receiving UDP does not establish correct parsing, race-state quality, strategy, or Linux/AMD qualification.
+Prove that an installed F1 title and Gran Turismo 7 can send live UDP telemetry from a PS5 to the development PC. Start with **F1** because the game exposes an officially documented UDP output setting. Then test **GT7**, whose community-documented protocol requires heartbeat and decryption. These are **transport tests**; receiving UDP does not establish correct parsing, race-state quality, strategy, or Linux qualification.
 
 No software needs to be installed on the PS5. No port forwarding or Internet exposure is needed. The PC can be Windows for discovery; Linux validation is still required later.
 

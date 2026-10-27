@@ -1,6 +1,6 @@
 # Model selection
 
-Status: selected pair, 2026-10-01. Chosen to fit the development RTX 3050 with 6 GB. Not an AMD qualification.
+Status: selected pair, 2026-10-01. Chosen to fit the development RTX 3050 with 6 GB. Not a Linux qualification.
 
 ## Selected pair
 
@@ -19,7 +19,7 @@ License-clean spare, not loaded in this session and not a measured radio replace
 
 ## Measured cohabitation
 
-Development GPU only: NVIDIA GeForce RTX 3050, 6144 MiB, Windows. Not Radeon evidence. Both models were resident with `keep_alive`. Older `eval_runs` notes that said the 1.7B or 2B evicted the 4B, or that the 0.8B produced no usable label, are not this session.
+Development GPU only: NVIDIA GeForce RTX 3050, 6144 MiB, Windows. Not Linux reference-machine evidence. Both models were resident with `keep_alive`. Older `eval_runs` notes that said the 1.7B or 2B evicted the 4B, or that the 0.8B produced no usable label, are not this session.
 
 Measured 2026-10-01:
 
@@ -36,6 +36,6 @@ Earlier load of `qwen3.5:4b` alone was about 4453 MiB after load, with idle abou
 
 - Minimum VRAM: 8 GB, enough for this pair plus a small desktop footprint on Linux.
 - Recommended VRAM: 12 GB, so both models, context, and the desktop stay resident without offload.
-- Expected family remains an AMD Radeon. The exact SKU is not chosen. No Radeon pair VRAM was measured. NVIDIA timings and VRAM traces do not qualify a Radeon.
+- The GPU vendor is not fixed. The exact card is not chosen. No pair VRAM was measured on Linux. Windows bench timings and VRAM traces do not qualify the Linux reference machine.
 
 Do not treat a perfect fake harness score as a model benchmark. Real Ollama runs still belong in the evaluation harness, with hardware named in the report.

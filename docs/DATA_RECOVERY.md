@@ -65,19 +65,31 @@ message stays the English log line. Missing or
 invalid fuel still produces neither an alert nor a radio line.
 Without `--brief`, no language model is called. With `--brief`, after the rule
 radio line, local Ollama model `qwen3.5:4b` (`http://127.0.0.1:11434/api/chat`,
-about 15 seconds) may print a second `raceengineer.radio` line (`source: "llm"`,
+at most 3 seconds, one attempt) may print a second `raceengineer.radio` line (`source: "llm"`,
 same type and timestamp). If Ollama is down, times out, or returns empty,
 nothing extra is printed, stderr gets one line, and the process does not fail.
 A reply that names fields, timestamps, or other log wording is dropped, and
 stderr says `brief rejected`. The rule radio stays.
+`--ollama-url` sets the Ollama base URL (default `http://127.0.0.1:11434`)
+and `--brief-model` sets the briefing model (default `qwen3.5:4b`), for
+example `--brief --ollama-url http://192.168.1.20:11434`. Other models are not
+evaluated briefing models; the output filters stay the same.
 
 `--speak` says each printed radio line, the rule line first and the llm line
 when that line is printed. It uses local Piper when the selected `it_IT` voice
 and its matching `.onnx.json` are installed and `piper` is on `PATH` or under
 the cache below. If Piper or the selected voice is missing, it uses Windows
-System.Speech. The first fallback prints one stderr line: `piper unavailable,
-using SAPI`. If speech fails, the radio JSON is still printed and an error is
-written to stderr. `--speak` does nothing when no radio line is produced.
+System.Speech, or `espeak-ng -v it` on Linux. The first fallback prints one
+stderr line: `piper unavailable, using SAPI` or `piper unavailable, using
+espeak-ng`. Piper WAV files play through PowerShell on Windows and through the
+first installed of `pw-play`, `paplay`, or `aplay` on Linux. If speech fails,
+the radio JSON is still printed and an error is written to stderr. `--speak`
+does nothing when no radio line is produced.
+
+On Linux, Piper (a `piper` executable) and the voice files go in
+`~/.cache/piper`, or `piper` can be on `PATH`. Linux playback is covered by
+offline tests with mocked commands only; it has not been heard on a real Linux
+audio device.
 
 Piper and the voice stay outside git, in `%LOCALAPPDATA%\RaceEngineer\piper`
 (`it_IT-paola-medium.onnx` plus the matching `.onnx.json`). The following

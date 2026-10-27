@@ -60,7 +60,7 @@ At handoff, map each acceptance criterion to the actual diff and supporting
 checks. Report exact commands/results, applicable gate evidence, fresh Astra
 review verdict, blockers, and residual risks. Identify hardware, OS, runtime,
 model, quantization, and test conditions for measurements. Label synthetic/fake
-results and do not generalize NVIDIA evidence into Radeon qualification.
+results and do not generalize evidence from one GPU or OS to another.
 
 Failed or unperformed checks cannot be reported as passing. An implementation
 report alone does not establish completion. Keep incomplete criteria open and
