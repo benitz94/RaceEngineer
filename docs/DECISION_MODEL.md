@@ -1,4 +1,8 @@
-# Typed decision model
+# Istinto, the engineer's supporting mind
+
+Istinto is the name of RaceEngineer's typed decision model. It is not a minor
+component: it makes the fast decisions that let the engineer's voice answer
+quickly and correctly.
 
 Status: neural weights selected, grammar path not implemented. Deterministic
 code in `src/raceengineer/decision.py` answers each declared question in the
@@ -14,7 +18,7 @@ voice is `qwen3.5:4b`. See `docs/MODEL_SELECTION.md`.
 1. Deterministic rules (`src/raceengineer/rules.py`) detect events such as low
    fuel. Missing data must not invent an event. Fuel level, validity, and
    hysteresis stay here. Rules do not speak.
-2. The **typed decision model** answers bounded questions with labels. It
+2. **Istinto**, the typed decision model, answers bounded questions with labels. It
    decides whether the engineer speaks, how urgent the call is, and whether
    there is room for a longer message or a question to the driver. It does
    not write radio text.

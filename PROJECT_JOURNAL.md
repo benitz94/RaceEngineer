@@ -1,5 +1,19 @@
 # PROJECT_JOURNAL.md
 
+## Istinto, the Engineer's Supporting Mind — 2026-10-28
+
+Decision:
+
+The typed decision model is named Istinto. It is the engineer's supporting
+mind: it makes the fast decisions (whether to speak, how urgently, and how
+long) that let the engineer's voice, the language model, answer quickly and
+correctly. Documents no longer call it the small model.
+
+Reason:
+
+Its parameter count is small, but its role is fundamental. The name states
+what it does.
+
 ## GPU Vendor Not Fixed — 2026-10-27
 
 Decision:

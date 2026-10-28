@@ -18,12 +18,14 @@ after the session.
 The two local models are chosen. Details and the measured VRAM floor are in
 `docs/MODEL_SELECTION.md`.
 
-1. Language model that speaks every radio line: `qwen3.5:4b` (Q4_K_M,
-   Apache-2.0). The phrase book is its baggage, not a script.
-2. Typed decision model: `qwen3.5:0.8b` (Q8_0, Apache-2.0), constrained to
-   declared labels only. It decides whether and how urgently the engineer
-   speaks. Deterministic code answers in its place until its grammar path
-   exists.
+1. The engineer's voice, the language model that speaks every radio line:
+   `qwen3.5:4b` (Q4_K_M, Apache-2.0). The phrase book is its baggage, not a
+   script.
+2. **Istinto**, the engineer's supporting mind (the typed decision model):
+   `qwen3.5:0.8b` (Q8_0, Apache-2.0), constrained to declared labels only. It
+   decides fast whether and how urgently the engineer speaks, so the voice
+   answers quickly and to the point. Deterministic code answers in its place
+   until its grammar path exists.
 
 Product VRAM floor: 8 GB minimum, 12 GB recommended. The GPU vendor is not
 fixed and the exact card is not chosen. Development bench traces do not

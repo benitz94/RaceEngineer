@@ -1,6 +1,8 @@
 """Deterministic typed decisions for a declared question.
 
-This is code, not a neural model. It does not call Ollama.
+These answers stand in for Istinto, the engineer's supporting mind (the typed
+decision model), until its grammar path exists. This is code, not a neural
+model. It does not call Ollama.
 """
 
 import re

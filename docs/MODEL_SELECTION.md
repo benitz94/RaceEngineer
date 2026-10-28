@@ -7,7 +7,7 @@ Status: selected pair, 2026-10-01. Chosen to fit the development RTX 3050 with 6
 | Role | Tag | Weights | License |
 | --- | --- | --- | --- |
 | Language model (engineer voice) | `qwen3.5:4b` | Q4_K_M, about 3.4 GB on disk, 4.66B parameters | Apache-2.0 |
-| Typed decision model | `qwen3.5:0.8b` | Q8_0, about 1.0 GB on disk, 873M parameters | Apache-2.0 |
+| Istinto (typed decision model) | `qwen3.5:0.8b` | Q8_0, about 1.0 GB on disk, 873M parameters | Apache-2.0 |
 
 Both checkpoints are free to obtain and run locally. Paid weights and paid cloud APIs remain out of scope. Apache-2.0 weights may be used beside GPL-3.0-only project code; they do not relicense RaceEngineer.
 
