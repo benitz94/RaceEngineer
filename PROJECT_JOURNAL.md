@@ -14,6 +14,10 @@ Reason:
 Its parameter count is small, but its role is fundamental. The name states
 what it does.
 
+Both the voice model and Istinto will be selected again on the new reference
+machine. The current pair is the 6 GB development-bench pair; the roles and
+names stay.
+
 ## GPU Vendor Not Fixed — 2026-10-27
 
 Decision:

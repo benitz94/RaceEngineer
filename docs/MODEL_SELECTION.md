@@ -13,6 +13,8 @@ Both checkpoints are free to obtain and run locally. Paid weights and paid cloud
 
 This pair was selected because it is the combination that still fits on the development NVIDIA GeForce RTX 3050 (6144 MiB). Two 4B checkpoints do not fit on that card. It is the best pair for that 6 GB bench, not a claim that these are the best models on a larger GPU.
 
+Both models will be selected again on the new reference machine, with measured benchmarks. The roles stay the same: the engineer's voice and Istinto. The licence and local-only rules above still apply.
+
 The 0.8B model is a constrained classifier only (GBNF or a JSON enum of the declared labels). Asked for one word it returned `brief`. Unconstrained briefing from the 0.8B is not acceptable. Until the grammar constraint exists, deterministic code answers its questions. See `docs/DECISION_MODEL.md`.
 
 License-clean spare, not loaded in this session and not a measured radio replacement: Phi-4-mini-instruct (`phi4-mini`, about 3.8B, MIT, about 2.5 GB). Other decision-sized weights (Qwen2.5-1.5B-Instruct, Phi-3-mini) remain generators until a grammar constraint exists.
