@@ -391,6 +391,12 @@ CHANGELOG.md PROJECT_JOURNAL.md
 -   The race engineer must adapt to the driver and provide suggestions; if the
     driver struggles to apply them, it must find simpler alternatives and
     report driving errors during the lap.
+-   Smart background music during the race, chosen from what happens on
+    track (2026-10-27). Examples: losing positions starts a high-energy track
+    (high-BPM hard rock or Eurobeat); a mountain-pass duel or an overtake
+    gets Eurobeat in the Initial D spirit. Music always ducks under the
+    engineer's radio and never covers a call. Tracks come from the owner's
+    local library; RaceEngineer does not ship music.
 
 Add ALL new ideas here, even if they seem useless.
 

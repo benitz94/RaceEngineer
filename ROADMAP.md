@@ -270,6 +270,8 @@ Possible directions:
 - setup management;
 - voice profiles;
 - speech recognition;
+- smart background music driven by race events (from the driver's local
+  library, always ducked under the radio);
 - web dashboard or application;
 - support for other simulators;
 - optional remote language model;
