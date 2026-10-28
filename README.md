@@ -211,6 +211,7 @@ product host.
 - `docs/MODEL_SELECTION.md`: selected pair, license, measured VRAM floor;
 - `docs/MODEL_EVALUATION.md`: offline harness for briefing and decision labels;
 - `docs/RADIO_PHRASES.md`: pit-wall phrase book for language-model training;
+- `docs/FEATURE_IDEAS.md`: recorded feature ideas, not approved requirements;
 - `docs/DATA_RECOVERY.md`: current demo and recording format.
 
 `PROJECT_JOURNAL.md` is the primary source for the project's intent and

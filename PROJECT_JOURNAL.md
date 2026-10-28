@@ -397,6 +397,10 @@ CHANGELOG.md PROJECT_JOURNAL.md
     gets Eurobeat in the Initial D spirit. Music always ducks under the
     engineer's radio and never covers a call. Tracks come from the owner's
     local library; RaceEngineer does not ship music.
+-   Strategy, fuel, tyre, weather, race-awareness, coaching, and post-session
+    ideas collected from a review of a commercial sim-racing coach
+    (2026-10-28), rewritten in RaceEngineer's terms in
+    `docs/FEATURE_IDEAS.md`.
 
 Add ALL new ideas here, even if they seem useless.
 
