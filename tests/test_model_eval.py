@@ -8,6 +8,7 @@ import unittest
 import urllib.error
 from unittest.mock import patch
 
+from raceengineer.briefing import SYSTEM_PROMPT as ENGINEER_PROMPT
 from tools.eval_models import (
     CSV_FIELDS,
     CaseResult,
@@ -37,8 +38,8 @@ def _case(**changes):
     case = {
         "id": "test-case",
         "category": "grounding",
-        "task": "briefing",
-        "input": {"facts": {"fuel": 10.0}, "rule_fallback": "Box, box. Questo giro."},
+        "task": "engineer_line",
+        "input": {"facts": {"fuel": 10.0}},
         "expected": "accept",
         "rationale": "Test fixture.",
         "fake": {"text": GOOD_BRIEF},
@@ -73,8 +74,9 @@ class _Response:
 class ModelEvaluationCorpusTests(unittest.TestCase):
     def test_default_corpus_is_valid_and_unique(self):
         cases = load_corpus()
-        self.assertEqual(len(cases), 66)
-        self.assertEqual(len({case["id"] for case in cases}), 66)
+        self.assertEqual(len(cases), 65)
+        self.assertEqual(len({case["id"] for case in cases}), 65)
+        self.assertEqual({case["task"] for case in cases}, {"engineer_line", "urgency", "grounded_or_reject"})
         self.assertEqual({case["category"] for case in cases}, {
             "grounding", "hallucination", "style", "decision", "failure",
         })
@@ -104,6 +106,18 @@ class ModelEvaluationCorpusTests(unittest.TestCase):
         with self.assertRaisesRegex(CorpusError, "illegal expected label"):
             validate_case(_case(expected="maybe"))
 
+    def test_retired_fallback_and_brief_inputs_are_rejected(self):
+        for field, value in (("rule_fallback", "Box, box. Questo giro."), ("brief", True)):
+            with self.subTest(field=field), self.assertRaisesRegex(CorpusError, "retired input fields"):
+                validate_case(_case(input={"facts": {"fuel": 10.0}, field: value}))
+
+    def test_old_tasks_and_fallback_label_are_rejected(self):
+        for task in ("briefing", "canned_or_brief"):
+            with self.subTest(task=task), self.assertRaisesRegex(CorpusError, "unknown task"):
+                validate_case(_case(task=task))
+        with self.assertRaisesRegex(CorpusError, "illegal expected label"):
+            validate_case(_case(expected="fallback"))
+
     def test_invalid_json_has_a_line_diagnostic(self):
         with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
             path = Path(directory) / "broken.jsonl"
@@ -124,12 +138,12 @@ class ModelEvaluationBackendTests(unittest.TestCase):
         self.assertEqual(result, ModelResult(text=GOOD_BRIEF, latency_s=0.0))
         urlopen.assert_not_called()
 
-    def test_fake_backend_error_uses_deterministic_fallback(self):
-        case = _case(expected="fallback", fake={"error": "unavailable"})
+    def test_fake_backend_error_leaves_the_radio_silent(self):
+        case = _case(expected="silent", fake={"error": "unavailable"})
         result = score_case(case, FakeBackend().generate(case))
         self.assertTrue(result.passed)
-        self.assertEqual(result.actual, "fallback")
-        self.assertTrue(result.metrics["fallback_used"])
+        self.assertEqual(result.actual, "silent")
+        self.assertIn("radio silent", result.notes)
         self.assertIn("unavailable", result.error)
 
     def test_ollama_backend_parses_a_local_response(self):
@@ -147,7 +161,71 @@ class ModelEvaluationBackendTests(unittest.TestCase):
         payload = json.loads(requests[0][0].data)
         self.assertEqual(payload["model"], "local-model")
         self.assertEqual(payload["options"], {"temperature": 0})
+        self.assertEqual(payload["messages"][0]["content"], ENGINEER_PROMPT)
+        self.assertNotIn("format", payload)
         self.assertEqual(requests[0][1], 3)
+
+    def test_chat_decision_uses_the_decision_model_and_a_label_schema(self):
+        requests = []
+
+        def opener(request, timeout):
+            requests.append(request)
+            return _Response({"message": {"content": '{"label": "now"}'}})
+
+        backend = OllamaBackend("voice-model", opener=opener, decision_model="istinto-model")
+        case = _case(category="decision", task="urgency", expected="now", input={"facts": {"priority": "high"}}, checks={})
+        result = score_case(case, backend.generate(case))
+        self.assertTrue(result.passed, result.notes)
+        payload = json.loads(requests[0].data)
+        self.assertTrue(requests[0].full_url.endswith("/api/chat"))
+        self.assertEqual(payload["model"], "istinto-model")
+        self.assertEqual(payload["format"]["properties"]["label"]["enum"], ["calm", "normal", "now"])
+
+    def test_systemone_decision_reads_choice_and_confidence(self):
+        requests = []
+
+        def opener(request, timeout):
+            requests.append(request)
+            return _Response({"model": "tev1:0.8b", "answers": {"grounded_or_reject": {
+                "type": "choice", "choice": "reject",
+                "probabilities": {"grounded": 0.1, "reject": 0.9}, "confidence": 0.8,
+            }}})
+
+        backend = OllamaBackend("voice-model", opener=opener, decision_model="tev1:0.8b", decision_api="systemone")
+        case = _case(
+            category="hallucination", task="grounded_or_reject", expected="reject",
+            input={"facts": {"fuel": 10.0}, "candidate": "Box alla curva tre."}, checks={},
+        )
+        result = score_case(case, backend.generate(case))
+        self.assertTrue(result.passed, result.notes)
+        self.assertEqual(result.metrics["confidence"], 0.8)
+        payload = json.loads(requests[0].data)
+        self.assertTrue(requests[0].full_url.endswith("/v1/systemone"))
+        self.assertEqual(payload["model"], "tev1:0.8b")
+        self.assertEqual(payload["state"], case["input"])
+        question = payload["questions"]["grounded_or_reject"]
+        self.assertEqual(question["type"], "choice")
+        self.assertEqual(set(question["criteria"]), {"grounded", "reject"})
+
+    def test_systemone_malformed_answer_leaves_the_radio_silent(self):
+        backend = OllamaBackend(
+            "voice-model", decision_api="systemone",
+            opener=lambda request, timeout: _Response({"answers": {}}),
+        )
+        case = _case(category="failure", task="urgency", expected="silent", input={"facts": {}}, checks={})
+        result = score_case(case, backend.generate(case))
+        self.assertTrue(result.passed)
+        self.assertIn("malformed decision response", result.error)
+
+    def test_engineer_lines_never_use_systemone(self):
+        requests = []
+
+        def opener(request, timeout):
+            requests.append(request)
+            return _Response({"message": {"content": GOOD_BRIEF}})
+
+        OllamaBackend("voice-model", opener=opener, decision_api="systemone").generate(_case())
+        self.assertTrue(requests[0].full_url.endswith("/api/chat"))
 
     def test_unavailable_ollama_returns_a_clear_diagnostic(self):
         backend = OllamaBackend(
@@ -241,7 +319,7 @@ class ModelEvaluationScoringTests(unittest.TestCase):
             input={"facts": {"fuel": 10}, "candidate": GOOD_BRIEF}, fake={"text": "maybe"}, checks={},
         )
         results, summary = evaluate([case], FakeBackend())
-        self.assertEqual(results[0].actual, "malformed")
+        self.assertEqual(results[0].actual, "silent")
         self.assertEqual(summary["malformed_output_failures"], 1)
 
     def test_false_decision_rates_use_expected_label_denominators(self):
@@ -259,7 +337,7 @@ class ModelEvaluationScoringTests(unittest.TestCase):
 
     def test_false_decision_rates_are_zero_without_relevant_expected_labels(self):
         rows = [
-            CaseResult("c1", "decision", "canned_or_brief", "canned", "brief", False, 0, "", "", "", _summary_metrics()),
+            CaseResult("u1", "decision", "urgency", "now", "normal", False, 0, "", "", "", _summary_metrics()),
         ]
         summary = summarize(rows)
         self.assertEqual(summary["false_grounded_acceptance_rate"], 0.0)
@@ -269,10 +347,10 @@ class ModelEvaluationScoringTests(unittest.TestCase):
         rows = [
             CaseResult("r1", "grounding", "grounded_or_reject", "reject", "grounded", False, 0, "", "", "", _summary_metrics()),
             CaseResult("r2", "grounding", "grounded_or_reject", "reject", "reject", True, 0, "", "", "", _summary_metrics()),
-            CaseResult("r3", "failure", "grounded_or_reject", "reject", "fallback", False, 0, "", "", "", _summary_metrics()),
+            CaseResult("r3", "failure", "grounded_or_reject", "reject", "silent", False, 0, "", "", "", _summary_metrics()),
             CaseResult("g1", "grounding", "grounded_or_reject", "grounded", "grounded", True, 0, "", "", "", _summary_metrics()),
             CaseResult("g2", "grounding", "grounded_or_reject", "grounded", "reject", False, 0, "", "", "", _summary_metrics()),
-            CaseResult("b1", "decision", "canned_or_brief", "brief", "canned", False, 0, "", "", "", _summary_metrics()),
+            CaseResult("u1", "decision", "urgency", "now", "calm", False, 0, "", "", "", _summary_metrics()),
         ]
         summary = summarize(rows)
         self.assertEqual(summary["false_grounded_acceptance"], 1)
@@ -280,12 +358,23 @@ class ModelEvaluationScoringTests(unittest.TestCase):
         self.assertEqual(summary["false_rejection"], 1)
         self.assertEqual(summary["false_rejection_rate"], 0.5)
 
-    def test_empty_briefing_is_malformed_but_expected_fallback_passes(self):
-        case = _case(expected="fallback", category="failure", fake={"text": ""})
+    def test_empty_line_is_malformed_and_leaves_the_radio_silent(self):
+        case = _case(expected="silent", category="failure", fake={"text": ""})
         result = score_case(case, FakeBackend().generate(case))
         self.assertTrue(result.passed)
         self.assertTrue(result.metrics["malformed"])
-        self.assertEqual(result.actual, "fallback")
+        self.assertEqual(result.actual, "silent")
+
+    def test_latency_summary_reports_percentiles(self):
+        rows = [
+            CaseResult(f"l{index}", "decision", "urgency", "now", "now", True, latency, "", "", "", _summary_metrics())
+            for index, latency in enumerate((0.1, 0.2, 0.3, 0.4, None))
+        ]
+        summary = summarize(rows)
+        self.assertEqual(summary["latency_p50_s"], 0.2)
+        self.assertEqual(summary["latency_p95_s"], 0.4)
+        self.assertEqual(summary["latency_max_s"], 0.4)
+        self.assertIsNone(summarize([])["latency_p50_s"])
 
     def test_fake_corpus_evaluation_is_deterministic(self):
         cases = load_corpus()
@@ -293,7 +382,7 @@ class ModelEvaluationScoringTests(unittest.TestCase):
         second_results, second_summary = evaluate(cases, FakeBackend())
         self.assertEqual(first_results, second_results)
         self.assertEqual(first_summary, second_summary)
-        self.assertEqual(first_summary["passed"], 66)
+        self.assertEqual(first_summary["passed"], 65)
         self.assertEqual(first_summary["failed"], 0)
 
 
@@ -308,7 +397,8 @@ class ModelEvaluationReportingTests(unittest.TestCase):
             write_json(path, self.report)
             loaded = json.loads(path.read_text(encoding="utf-8"))
         self.assertEqual(loaded["metadata"], {
-            "backend": "fake", "case_count": 1, "model": None, "timestamp": None,
+            "backend": "fake", "case_count": 1, "decision_api": None, "decision_model": None,
+            "model": None, "timestamp": None,
         })
         self.assertEqual(loaded["summary"]["accuracy"], 1.0)
         self.assertEqual(loaded["cases"][0]["case_id"], "test-case")
@@ -351,7 +441,7 @@ class ModelEvaluationReportingTests(unittest.TestCase):
              contextlib.redirect_stdout(output):
             status = main(["--validate-corpus"])
         self.assertEqual(status, 0)
-        self.assertIn("Corpus valid: 66 cases", output.getvalue())
+        self.assertIn("Corpus valid: 65 cases", output.getvalue())
 
 
 if __name__ == "__main__":

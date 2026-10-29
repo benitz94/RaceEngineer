@@ -45,8 +45,10 @@ spoken voice is Serena. Engineer Profiles are not implemented. The recovery
 slice does not define the production hardware. Driver speech recognition
 (physical push-to-talk button, hardware not chosen) and race-to-race memory
 are planned next.
-The offline model-evaluation corpus in `tests/model_eval` still describes the
-retired `canned_or_brief` question and a rule fallback; it needs updating.
+The offline model-evaluation harness (`tools/eval_models.py`) scores the
+engineer line and Istinto's `urgency` and `grounded_or_reject` questions, with
+`silent` as the outcome of a failure. It can ask Istinto through a JSON-schema
+chat request or a Jev-style `/v1/systemone` decision model.
 
 Runtime and offline tests use only the Python standard library. Python 3.10 or
 newer is required. Run instructions and recording semantics are documented in

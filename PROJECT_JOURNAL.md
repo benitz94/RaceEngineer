@@ -1,5 +1,55 @@
 # PROJECT_JOURNAL.md
 
+## The Engineer Has a Soul — 2026-10-29
+
+Decision:
+
+Guiding principle: the rules compute the numbers; the engineer lives them
+with the driver. He speaks in his own words, knows when to stay quiet, opens
+the radio on his own initiative, sometimes asks the driver for an opinion,
+adapts his tone to the driver's mood while keeping his character, and learns
+from race to race. Every new feature is judged on reliability first and also
+on whether it serves this relationship.
+
+Reason:
+
+Strategy and telemetry dashboards already exist. A race engineer that reads
+numbers aloud has no soul; the relationship between driver and engineer is
+what RaceEngineer is for.
+
+## Driver Voice: Live Inference and a Data Matrix — 2026-10-29
+
+Decision:
+
+The engineer learns how the driver speaks and sounds without keeping audio.
+The driver's voice is processed live and locally by inference; the audio is
+then discarded. Each utterance becomes one row of a local data matrix of
+embeddings:
+
+- a speaker embedding (how the driver normally sounds), as a baseline;
+- an emotion embedding and simple prosody values (pitch, energy, speaking
+  rate), read against that baseline to sense mood;
+- a text embedding of the transcribed words (how the driver speaks).
+
+Memory has two levels: episodic (what happened, race by race) and semantic
+(what is true about the driver, such as preferred call length or what an
+expression means). After each race a consolidation step turns episodes into
+facts and compresses old episodes, so memory stays small and fast.
+
+Vectors are stored in float16. More aggressive quantization (int8 or binary)
+is not used unless measurements show it is needed and harmless. The leading
+storage candidate is a single local SQLite file with `sqlite-vec`; LanceDB is
+the alternative. Memory frameworks such as Mem0 and Letta are inspiration,
+not dependencies. Candidate models (for example ECAPA-TDNN for the speaker,
+emotion2vec for emotion) and any new dependency need licence checks and the
+owner's approval. Mood from voice is approximate and must be measured.
+
+Reason:
+
+Owner decision: learn the driver, do not archive recordings. A row of
+vectors takes a few kilobytes instead of tens of kilobytes of audio, can be
+searched by similarity, and cannot be turned back into the driver's voice.
+
 ## Jev-Style Decision Models as Istinto's Candidate Runtime — 2026-10-29
 
 Decision:
@@ -463,6 +513,14 @@ CHANGELOG.md PROJECT_JOURNAL.md
     ideas collected from a review of a commercial sim-racing coach
     (2026-10-28), rewritten in RaceEngineer's terms in
     `docs/FEATURE_IDEAS.md`.
+-   Eyes for the engineer (2026-10-29), to evaluate. A camera pointed at the
+    screen (owner's COOAU CU-SPC06) or a stream of the game screen (PS Remote
+    Play, or an HDMI capture card if the owner buys one). Lightweight reading
+    of fixed HUD zones for missing data such as GT7 rival positions, and an
+    occasional look for context, relax scenes, and post-race briefings.
+    Critical alerts never depend on it. Concerns raised: a vision model is
+    too slow for live video, and camera reading is error prone (glare, angle,
+    wide-angle lens). Evaluate after the first telemetry adapters.
 
 Add ALL new ideas here, even if they seem useless.
 

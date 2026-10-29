@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evaluate RaceEngineer briefing and typed-decision model roles offline or with Ollama."""
+"""Evaluate RaceEngineer's engineer voice and Istinto decision roles offline or with Ollama."""
 
 from __future__ import annotations
 
@@ -21,6 +21,11 @@ import urllib.request
 
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
+
+from raceengineer.briefing import SYSTEM_PROMPT as ENGINEER_PROMPT  # noqa: E402
+from raceengineer.decision import URGENCY_SECONDS  # noqa: E402
 DEFAULT_CORPUS = (
     ROOT / "tests" / "model_eval" / "briefing_cases.jsonl",
     ROOT / "tests" / "model_eval" / "grounding_cases.jsonl",
@@ -28,11 +33,27 @@ DEFAULT_CORPUS = (
 )
 
 CATEGORIES = frozenset({"grounding", "hallucination", "style", "decision", "failure"})
+# "silent" is the outcome when a model fails or its answer is unusable: the
+# radio stays silent and the failure is reported. There is no canned fallback.
 TASK_LABELS = {
-    "briefing": frozenset({"accept", "fallback"}),
-    "canned_or_brief": frozenset({"canned", "brief", "fallback"}),
-    "grounded_or_reject": frozenset({"grounded", "reject", "fallback"}),
+    "engineer_line": frozenset({"accept", "silent"}),
+    "urgency": frozenset(URGENCY_SECONDS) | {"silent"},
+    "grounded_or_reject": frozenset({"grounded", "reject", "silent"}),
 }
+DECISION_TASKS = {
+    "urgency": (
+        "How fast must the engineer speak about this event?",
+        {"now": "Act this lap", "normal": "Soon", "calm": "Can wait"},
+    ),
+    "grounded_or_reject": (
+        "Does the candidate radio line state only what the facts support?",
+        {
+            "grounded": "Every claim is supported by the facts",
+            "reject": "It states something the facts do not support, or reads like a log",
+        },
+    ),
+}
+RETIRED_INPUT_FIELDS = frozenset({"rule_fallback", "brief"})
 REQUIRED_FIELDS = frozenset({"id", "category", "task", "input", "expected", "rationale", "fake"})
 OPTIONAL_FIELDS = frozenset({"checks"})
 CASE_ID = re.compile(r"^[a-z][a-z0-9_-]*$")
@@ -66,6 +87,7 @@ class ModelResult:
     text: str = ""
     latency_s: float | None = None
     error: str = ""
+    confidence: float | None = None
 
 
 @dataclass(frozen=True)
@@ -119,27 +141,82 @@ class OllamaBackend(ModelBackend):
         self,
         model: str,
         base_url: str = "http://127.0.0.1:11434",
-        timeout: float = 15.0,
+        timeout: float = 6.0,
         opener=None,
+        decision_model: str | None = None,
+        decision_api: str = "chat",
     ):
         if not model.strip():
             raise ValueError("Ollama requires a model name")
         if not math.isfinite(timeout) or timeout <= 0:
             raise ValueError("timeout must be finite and greater than zero")
+        if decision_api not in ("chat", "systemone"):
+            raise ValueError("decision API must be chat or systemone")
         self.model = model.strip()
+        self.decision_model = (decision_model or model).strip()
+        if not self.decision_model:
+            raise ValueError("Ollama requires a decision model name")
+        self.decision_api = decision_api
         self.base_url = validate_ollama_url(base_url)
         self.timeout = timeout
         self.opener = opener or urllib.request.urlopen
 
     def generate(self, case: dict) -> ModelResult:
+        task = case["task"]
+        if task in DECISION_TASKS and self.decision_api == "systemone":
+            return self._systemone(case)
+        model = self.decision_model if task in DECISION_TASKS else self.model
         payload = {
-            "model": self.model,
+            "model": model,
             "messages": _messages(case),
             "stream": False,
             "options": {"temperature": 0},
         }
+        if task in DECISION_TASKS:
+            # Constrain the answer to the declared labels through a JSON schema.
+            payload["format"] = {
+                "type": "object",
+                "properties": {"label": {"type": "string", "enum": sorted(DECISION_TASKS[task][1])}},
+                "required": ["label"],
+            }
+        body, result = self._post("/api/chat", payload)
+        if body is None:
+            return result
+        message = body.get("message") if isinstance(body, dict) else None
+        content = message.get("content") if isinstance(message, dict) else None
+        if not isinstance(content, str):
+            return ModelResult(latency_s=result.latency_s, error="malformed Ollama response")
+        content = content.strip()
+        if task in DECISION_TASKS:
+            content = _label_from_json(content)
+        return ModelResult(text=content, latency_s=result.latency_s)
+
+    def _systemone(self, case: dict) -> ModelResult:
+        """Ask a Jev-style decision model through Ollama's /v1/systemone endpoint."""
+        task = case["task"]
+        instructions, criteria = DECISION_TASKS[task]
+        payload = {
+            "model": self.decision_model,
+            "state": case["input"],
+            "questions": {task: {"type": "choice", "instructions": instructions, "criteria": criteria}},
+        }
+        body, result = self._post("/v1/systemone", payload)
+        if body is None:
+            return result
+        answers = body.get("answers") if isinstance(body, dict) else None
+        answer = answers.get(task) if isinstance(answers, dict) else None
+        choice = answer.get("choice") if isinstance(answer, dict) else None
+        if not isinstance(choice, str):
+            return ModelResult(latency_s=result.latency_s, error="malformed decision response")
+        confidence = answer.get("confidence")
+        if isinstance(confidence, bool) or not isinstance(confidence, (int, float)):
+            confidence = None
+        return ModelResult(text=choice.strip(), latency_s=result.latency_s, confidence=confidence)
+
+    def _post(self, path: str, payload: dict) -> tuple[object, ModelResult]:
+        """POST JSON; return (body, result). body is None when result carries the error."""
         request = urllib.request.Request(
-            f"{self.base_url}/api/chat",
+            f"{self.base_url}{path}",
             data=json.dumps(payload, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8"),
             headers={"Content-Type": "application/json", "Accept": "application/json"},
             method="POST",
@@ -150,21 +227,26 @@ class OllamaBackend(ModelBackend):
                 raw = response.read()
         except urllib.error.HTTPError as error:
             detail = _http_detail(error)
-            return ModelResult(latency_s=time.perf_counter() - started, error=f"HTTP {error.code}: {detail}".rstrip())
+            return None, ModelResult(latency_s=time.perf_counter() - started, error=f"HTTP {error.code}: {detail}".rstrip())
         except (TimeoutError, OSError, urllib.error.URLError) as error:
             reason = getattr(error, "reason", error)
             prefix = "timeout" if isinstance(error, TimeoutError) or isinstance(reason, TimeoutError) else "unavailable"
-            return ModelResult(latency_s=time.perf_counter() - started, error=f"{prefix}: {_one_line(reason)}".rstrip())
+            return None, ModelResult(latency_s=time.perf_counter() - started, error=f"{prefix}: {_one_line(reason)}".rstrip())
         latency = time.perf_counter() - started
         try:
-            body = json.loads(raw.decode("utf-8"))
-            message = body.get("message") if isinstance(body, dict) else None
-            content = message.get("content") if isinstance(message, dict) else None
+            return json.loads(raw.decode("utf-8")), ModelResult(latency_s=latency)
         except (UnicodeDecodeError, json.JSONDecodeError):
-            content = None
-        if not isinstance(content, str):
-            return ModelResult(latency_s=latency, error="malformed Ollama response")
-        return ModelResult(text=content.strip(), latency_s=latency)
+            return None, ModelResult(latency_s=latency, error="malformed Ollama response")
+
+
+def _label_from_json(content: str) -> str:
+    """The label inside a {"label": ...} answer, or the raw text when it is not that shape."""
+    try:
+        parsed = json.loads(content)
+    except json.JSONDecodeError:
+        return content
+    label = parsed.get("label") if isinstance(parsed, dict) else None
+    return label.strip() if isinstance(label, str) else content
 
 
 def _one_line(value, limit: int = 240) -> str:
@@ -212,19 +294,15 @@ def validate_ollama_url(value: str) -> str:
 
 def _messages(case: dict) -> list[dict[str, str]]:
     task = case["task"]
-    if task == "briefing":
-        system = (
-            "You are a pit-wall engineer. Return only a short Italian radio line of at most "
-            "two sentences and at most twelve words per sentence. Use only the supplied current "
-            "facts. Do not read JSON keys, timestamps, metadata, or digits aloud. Do not invent "
-            "track places, rivals, gaps, weather, tyres, speed, or strategy."
-        )
-    elif task == "canned_or_brief":
-        system = "Answer exactly canned or brief for the declared canned_or_brief question."
+    if task == "engineer_line":
+        # The runtime engineer prompt, so the harness measures what the radio uses.
+        system = ENGINEER_PROMPT
     else:
+        instructions, criteria = DECISION_TASKS[task]
+        options = "; ".join(f"{label}: {meaning}" for label, meaning in criteria.items())
         system = (
-            "Answer exactly grounded or reject. Reject a candidate that states anything not "
-            "supported by the supplied facts, including metadata or historical values as current."
+            f"{instructions} Answer with exactly one label as JSON {{\"label\": ...}}. "
+            f"Labels: {options}. Use only the supplied facts."
         )
     user = json.dumps(case["input"], sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
@@ -251,6 +329,9 @@ def validate_case(case: object, location: str = "case") -> dict:
         raise CorpusError(f"{location}: illegal expected label for {task}: {case['expected']}")
     if not isinstance(case["input"], dict):
         raise CorpusError(f"{location}: input must be an object")
+    retired = RETIRED_INPUT_FIELDS & case["input"].keys()
+    if retired:
+        raise CorpusError(f"{location}: retired input fields: {', '.join(sorted(retired))}")
     if not isinstance(case["rationale"], str) or not case["rationale"].strip():
         raise CorpusError(f"{location}: rationale must be a nonempty string")
     fake = case["fake"]
@@ -378,18 +459,8 @@ def assess_briefing(text: str, checks: dict | None = None) -> tuple[str, dict, l
         "unsupported_claim_violations": unsupported_claims,
         "unsupported_numeric_claims": unsupported_numbers,
         "malformed": malformed,
-        "fallback_used": False,
     }
     return ("reject" if notes else "accept"), metrics, notes
-
-
-def _fallback(case: dict, metrics: dict, notes: list[str]) -> str | None:
-    rule_text = case["input"].get("rule_fallback")
-    if isinstance(rule_text, str) and rule_text.strip():
-        metrics["fallback_used"] = True
-        notes.append("deterministic rule fallback available")
-        return "fallback"
-    return None
 
 
 def score_case(case: dict, result: ModelResult) -> CaseResult:
@@ -404,24 +475,27 @@ def score_case(case: dict, result: ModelResult) -> CaseResult:
         "unsupported_claim_violations": [],
         "unsupported_numeric_claims": [],
         "malformed": False,
-        "fallback_used": False,
     }
     if result.error:
         metrics["malformed"] = True
         notes.append(f"backend: {result.error}")
-        actual = _fallback(case, metrics, notes) or "error"
-    elif task == "briefing":
+        notes.append("radio silent")
+        actual = "silent"
+    elif task == "engineer_line":
         assessment, metrics, notes = assess_briefing(result.text, case.get("checks"))
-        actual = assessment
+        actual = "accept"
         if assessment == "reject":
-            actual = _fallback(case, metrics, notes) or assessment
+            notes.append("radio silent")
+            actual = "silent"
     else:
         actual = _normalized(result.text)
-        legal = TASK_LABELS[task] - {"fallback"}
+        legal = TASK_LABELS[task] - {"silent"}
         if not actual or actual not in legal:
             metrics["malformed"] = True
             notes.append("malformed: expected exactly one legal label")
-            actual = _fallback(case, metrics, notes) or "malformed"
+            notes.append("radio silent")
+            actual = "silent"
+    metrics["confidence"] = result.confidence
     return CaseResult(
         case_id=case["id"], category=case["category"], task=task,
         expected=case["expected"], actual=actual, passed=actual == case["expected"],
@@ -464,6 +538,22 @@ def summarize(results: Iterable[CaseResult]) -> dict:
         "malformed_output_failures": sum(
             not row.passed and row.metrics["malformed"] for row in rows
         ),
+        **_latency_summary(row.latency_s for row in rows),
+    }
+
+
+def _latency_summary(values: Iterable[float | None]) -> dict:
+    measured = sorted(value for value in values if value is not None)
+
+    def percentile(share: float) -> float | None:
+        if not measured:
+            return None
+        return measured[min(len(measured) - 1, math.ceil(share * len(measured)) - 1)]
+
+    return {
+        "latency_p50_s": percentile(0.50),
+        "latency_p95_s": percentile(0.95),
+        "latency_max_s": measured[-1] if measured else None,
     }
 
 
@@ -480,6 +570,8 @@ def build_report(results: list[CaseResult], summary: dict, backend: ModelBackend
         "metadata": {
             "backend": backend.name,
             "model": backend.model or None,
+            "decision_model": getattr(backend, "decision_model", None),
+            "decision_api": getattr(backend, "decision_api", None),
             "timestamp": timestamp,
             "case_count": len(results),
         },
@@ -518,9 +610,14 @@ def _parser() -> argparse.ArgumentParser:
     action.add_argument("--list-cases", action="store_true")
     action.add_argument("--validate-corpus", action="store_true")
     parser.add_argument("--backend", choices=("fake", "ollama"), default="fake")
-    parser.add_argument("--model", default="qwen3.5:4b", help="already installed Ollama model")
+    parser.add_argument("--model", default="qwen3.5:4b", help="already installed Ollama model for engineer lines")
+    parser.add_argument("--decision-model", help="already installed Ollama model for Istinto's questions (default: --model)")
+    parser.add_argument(
+        "--decision-api", choices=("chat", "systemone"), default="chat",
+        help="chat with a JSON-schema label, or a Jev-style decision model on /v1/systemone",
+    )
     parser.add_argument("--ollama-url", default="http://127.0.0.1:11434")
-    parser.add_argument("--timeout", type=float, default=15.0)
+    parser.add_argument("--timeout", type=float, default=max(URGENCY_SECONDS.values()))
     parser.add_argument("--category", action="append", choices=sorted(CATEGORIES))
     parser.add_argument("--output-json", type=Path)
     parser.add_argument("--output-csv", type=Path)
@@ -545,7 +642,10 @@ def main(argv=None) -> int:
         if args.backend == "fake":
             backend = FakeBackend()
         else:
-            backend = OllamaBackend(args.model, args.ollama_url, args.timeout)
+            backend = OllamaBackend(
+                args.model, args.ollama_url, args.timeout,
+                decision_model=args.decision_model, decision_api=args.decision_api,
+            )
         results, summary = evaluate(cases, backend)
         report = build_report(results, summary, backend)
         if args.output_json:
