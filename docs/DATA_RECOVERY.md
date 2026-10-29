@@ -78,7 +78,8 @@ and `--engineer-model` sets the model (default `qwen3.5:4b`), for example
 `--engineer --ollama-url http://192.168.1.20:11434`. Other models are not
 evaluated engineer models; the output filters stay the same.
 
-`--speak` (needs `--engineer`) says each printed radio line. It uses local Piper when the selected `it_IT` voice
+`--speak` (needs `--engineer`) says each printed radio line, opened by a short
+synthesized radio beep that plays right before the voice. It uses local Piper when the selected `it_IT` voice
 and its matching `.onnx.json` are installed and `piper` is on `PATH` or under
 the cache below. If Piper or the selected voice is missing, it uses Windows
 System.Speech, or `espeak-ng -v it` on Linux. The first fallback prints one

@@ -17,6 +17,7 @@ class SpeechTests(unittest.TestCase):
         error = io.StringIO()
         with patch("raceengineer.speech._on_windows", return_value=True), \
              patch("raceengineer.speech.find_piper", return_value=None), \
+             patch("raceengineer.speech.radio_beep"), \
              patch("raceengineer.speech.subprocess.run") as run, \
              patch("sys.stderr", error):
             run.return_value = subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="")
@@ -33,6 +34,7 @@ class SpeechTests(unittest.TestCase):
         error = io.StringIO()
         with patch("raceengineer.speech._on_windows", return_value=False), \
              patch("raceengineer.speech.find_piper", return_value=None), \
+             patch("raceengineer.speech.radio_beep"), \
              patch("raceengineer.speech.shutil.which", return_value="/usr/bin/espeak-ng"), \
              patch("raceengineer.speech.subprocess.run") as run, \
              patch("sys.stderr", error):
@@ -106,12 +108,44 @@ class SpeechTests(unittest.TestCase):
         with patch("raceengineer.speech.find_piper", return_value=Path("piper.exe")), \
              patch("raceengineer.speech.find_italian_model", return_value=Path("it_IT-riccardo-x_low.onnx")) as model, \
              patch("raceengineer.speech.subprocess.run", side_effect=fake_run), \
+             patch("raceengineer.speech.radio_beep", side_effect=lambda: played.append("beep")), \
              patch("raceengineer.speech._play_wav", side_effect=played.append):
             speak("Box, box. Questo giro.", "riccardo")
         model.assert_called_once_with("riccardo")
+        self.assertEqual(len(played), 2)
+        self.assertEqual(played[0], "beep")
+        self.assertTrue(str(played[1]).endswith(".wav"))
+        self.assertFalse(played[1].exists())
+
+    def test_beep_is_a_short_valid_wav(self):
+        import wave
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "beep.wav"
+            speech.write_beep(path)
+            with wave.open(str(path), "rb") as beep:
+                self.assertEqual((beep.getnchannels(), beep.getsampwidth()), (1, 2))
+                seconds = beep.getnframes() / beep.getframerate()
+        self.assertTrue(0.1 < seconds < 0.3, seconds)
+
+    def test_beep_plays_before_the_voice_and_can_be_skipped(self):
+        for beep, expected in ((True, ["beep", "voice"]), (False, ["voice"])):
+            with self.subTest(beep=beep):
+                speech._NOTICE_SENT = True
+                order = []
+                with patch("raceengineer.speech.find_piper", return_value=None), \
+                     patch("raceengineer.speech._on_windows", return_value=False), \
+                     patch("raceengineer.speech.radio_beep", side_effect=lambda: order.append("beep")), \
+                     patch("raceengineer.speech._speak_espeak", side_effect=lambda text: order.append("voice")):
+                    speak("Rientra.", beep=beep)
+                self.assertEqual(order, expected)
+
+    def test_radio_beep_plays_and_removes_its_file(self):
+        played = []
+        with patch("raceengineer.speech._play_wav", side_effect=lambda path: played.append((path, path.stat().st_size))):
+            speech.radio_beep()
         self.assertEqual(len(played), 1)
-        self.assertTrue(str(played[0]).endswith(".wav"))
-        self.assertFalse(played[0].exists())
+        self.assertGreater(played[0][1], 44)
+        self.assertFalse(played[0][0].exists())
 
     def test_finder_prefers_paola_and_skips_english(self):
         with tempfile.TemporaryDirectory() as directory:

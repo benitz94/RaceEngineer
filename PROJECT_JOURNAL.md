@@ -1,5 +1,28 @@
 # PROJECT_JOURNAL.md
 
+## Radio Beep and Listening — 2026-10-29
+
+Decision:
+
+A short radio beep opens every engineer line, as on a real pit-wall radio, so
+neither the driver nor the engineer is caught by surprise. The beep is an
+original synthesized chirp, not a recording of any broadcast sound. It plays
+right before the voice.
+
+When the driver presses the physical push-to-talk button, a beep opens the
+driver's channel as well (planned with the button).
+
+The engineer is always listening, locally, to sense the driver's mood from
+the voice, and adjusts his tone while keeping his own character. Listening is
+not a question: only the push-to-talk button tells the engineer that the
+driver expects an answer. Mood changes how the engineer speaks, never what
+the rules detect.
+
+Reason:
+
+The beep makes every radio exchange explicit. The button separates "the
+engineer hears me" from "I am asking the engineer".
+
 ## Istinto, the Engineer's Supporting Mind — 2026-10-28
 
 Decision:

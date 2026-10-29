@@ -156,6 +156,7 @@ class RulesTests(unittest.TestCase):
         error = io.StringIO()
         with patch("raceengineer.speech._on_windows", return_value=True), \
              patch("raceengineer.speech.find_piper", return_value=None), \
+             patch("raceengineer.speech.radio_beep"), \
              patch("raceengineer.speech.subprocess.run") as run, \
              contextlib.redirect_stderr(error):
             run.return_value = subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="")

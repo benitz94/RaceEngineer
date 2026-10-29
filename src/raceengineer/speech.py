@@ -2,18 +2,26 @@
 
 Windows falls back to SAPI and plays WAV files through PowerShell. Linux falls
 back to espeak-ng and plays WAV files through pw-play, paplay, or aplay.
+Each line opens with a short radio beep, so the driver is never caught by
+surprise.
 """
 
+import math
 import os
 from pathlib import Path
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
+import wave
 
 PIPER_NOTICE = "piper unavailable, using SAPI"
 ESPEAK_NOTICE = "piper unavailable, using espeak-ng"
 _NOTICE_SENT = False
+# Original two-tone radio-open chirp: (frequency Hz, seconds); 0 Hz is a gap.
+_BEEP_TONES = ((1400, 0.06), (0, 0.03), (1900, 0.08))
+_BEEP_RATE = 22050
 
 _SAPI_SCRIPT = r"""
 $ErrorActionPreference = 'Stop'
@@ -190,7 +198,39 @@ def _play_wav(path: Path) -> None:
     raise RuntimeError("no WAV player found (pw-play, paplay, or aplay)")
 
 
-def _try_piper(text: str, voice: str) -> bool:
+def write_beep(path: Path) -> None:
+    """Write the radio-open chirp as a mono 16-bit WAV file."""
+    fade = int(_BEEP_RATE * 0.005)
+    frames = bytearray()
+    for frequency, seconds in _BEEP_TONES:
+        count = int(_BEEP_RATE * seconds)
+        for index in range(count):
+            envelope = min(1.0, index / fade, (count - index) / fade)
+            sample = 0.35 * envelope * math.sin(2 * math.pi * frequency * index / _BEEP_RATE)
+            frames += struct.pack("<h", int(sample * 32767))
+    with wave.open(str(path), "wb") as output:
+        output.setnchannels(1)
+        output.setsampwidth(2)
+        output.setframerate(_BEEP_RATE)
+        output.writeframes(bytes(frames))
+
+
+def radio_beep() -> None:
+    """Play the radio-open chirp before a line."""
+    handle = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+    handle.close()
+    path = Path(handle.name)
+    try:
+        write_beep(path)
+        _play_wav(path)
+    finally:
+        try:
+            path.unlink()
+        except OSError:
+            pass
+
+
+def _try_piper(text: str, voice: str, beep: bool = True) -> bool:
     """Synthesize with the selected Italian model. False when Piper or that model is missing."""
     binary = find_piper()
     model = find_italian_model(voice)
@@ -220,6 +260,8 @@ def _try_piper(text: str, voice: str) -> bool:
         if completed.returncode != 0 or not wav.is_file() or wav.stat().st_size == 0:
             detail = completed.stderr.decode("utf-8", errors="replace").strip() or "piper failed"
             raise RuntimeError(detail)
+        if beep:
+            radio_beep()
         _play_wav(wav)
     finally:
         try:
@@ -229,15 +271,20 @@ def _try_piper(text: str, voice: str) -> bool:
     return True
 
 
-def speak(text: str, voice: str = "serena") -> None:
-    """Speak one radio line with the selected Piper voice, or the OS fallback when it is missing."""
+def speak(text: str, voice: str = "serena", beep: bool = True) -> None:
+    """Speak one radio line with the selected Piper voice, or the OS fallback when it is missing.
+
+    The radio beep plays right before the voice, after Piper has synthesized it.
+    """
     global _NOTICE_SENT
-    if _try_piper(text, voice):
+    if _try_piper(text, voice, beep):
         return
     windows = _on_windows()
     if not _NOTICE_SENT:
         print(PIPER_NOTICE if windows else ESPEAK_NOTICE, file=sys.stderr)
         _NOTICE_SENT = True
+    if beep:
+        radio_beep()
     if windows:
         _speak_sapi(text)
     else:

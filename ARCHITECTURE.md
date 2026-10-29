@@ -262,7 +262,8 @@ Converts approved messages into audio without requiring cloud services.
 
 The prototype uses Piper when the selected Italian voice and matching config
 are installed, with a Windows SAPI or Linux espeak-ng fallback when Piper or
-that voice is missing. Serena is the default voice. WAV playback uses Windows
+that voice is missing. A short synthesized radio beep opens every spoken line.
+Serena is the default voice. WAV playback uses Windows
 PowerShell, or `pw-play`, `paplay`, or `aplay` on Linux. The Linux path is
 covered only by mocked offline tests; Linux production speech/playback
 qualification remains open.
