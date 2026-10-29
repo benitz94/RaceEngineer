@@ -1,5 +1,33 @@
 # PROJECT_JOURNAL.md
 
+## Startup Self-Check and Health Log — 2026-10-29
+
+Decision:
+
+Before a session, RaceEngineer checks each component in turn: telemetry
+source, engineer voice model, Istinto, TTS voice, audio output, the
+engineer profile, and later the microphone and push-to-talk button. Each
+result is written to a local health log. An invalid engineer profile is
+rejected at startup with a clear error.
+
+The engineer reports the result himself, like a pit-wall radio check: a
+short "ready" when everything works, or what is not working. During a
+session, a component failure is logged and the engineer tells the driver at
+the next suitable moment. If the voice itself fails (model or TTS), the
+engineer cannot speak: the failure stays in the log and on the PC screen,
+and the radio stays silent, as decided on 2026-10-27. This includes a
+profile voice that fails during a session: there is no substitute voice. As
+in a real race, team radio can fail.
+
+The health log stays small: one short line per check, the last 30 full
+startup reports kept, failures kept longer, with a 10 MB cap.
+
+Reason:
+
+A failure must surface before the race, not during it, and must be fixed
+rather than hidden. A real engineer runs a radio check before the car
+leaves the garage.
+
 ## The Engineer Has a Soul — 2026-10-29
 
 Decision:

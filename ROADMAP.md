@@ -180,6 +180,12 @@ Activities:
 - verify Wi-Fi and Ethernet;
 - verify behavior after a restart and source loss;
 - verify degradation in the event of a TTS error;
+- run a combined load benchmark: every component that will share the GPU
+  and CPU in a session runs at the same time (engineer voice model, Istinto,
+  speech recognition, TTS, and later screen reading or an avatar client if
+  they run on the same machine), measuring VRAM, CPU, and whether answers
+  still meet the urgency deadlines (1, 3, and 6 seconds);
+- verify the startup self-check and its health log;
 - document mandatory and optional hardware;
 - identify any limitations that require optimization;
 - evaluate replacing individual Python modules with C++ or Rust only when
