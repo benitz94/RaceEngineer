@@ -1,5 +1,22 @@
 # PROJECT_JOURNAL.md
 
+## Jev-Style Decision Models as Istinto's Candidate Runtime — 2026-10-29
+
+Decision:
+
+Jev-style decision models served by Ollama 0.35 and later (`/v1/systemone`)
+are the leading candidate runtime for Istinto on the new reference machine.
+They answer named questions about a state with typed answers, probabilities,
+and confidence, which matches Istinto's role. Candidates are `nimble`,
+`tev1`, and `tev1:0.8b`. Nothing is selected until licences are confirmed
+and VRAM, latency, and accuracy are measured on race questions.
+
+Reason:
+
+The project's decision layer was inspired by the Jev approach from the start.
+Ollama now runs such models locally and free of charge. Details are in
+`docs/DECISION_MODEL.md`.
+
 ## Radio Beep and Listening — 2026-10-29
 
 Decision:

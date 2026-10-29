@@ -4,7 +4,9 @@ Istinto is the name of RaceEngineer's typed decision model. It is not a minor
 component: it makes the fast decisions that let the engineer's voice answer
 quickly and correctly.
 
-Status: neural weights selected, grammar path not implemented. Deterministic
+Status: neural weights selected for the 6 GB bench, grammar path not
+implemented. Jev-style decision models in Ollama are the leading candidate
+runtime for the new reference machine (see below). Deterministic
 code in `src/raceengineer/decision.py` answers each declared question in the
 model's place until then.
 
@@ -56,6 +58,80 @@ nonzero, so it is fixed rather than hidden. Telemetry analysis continues.
 
 A local check of `qwen3.5:4b` on fuel 10.0 / `fuel_low` returned in 0.98 s and
 invented a corner. That is why every line passes `grounded_or_reject`.
+
+## Candidate runtime: Jev-style decision models
+
+Since Ollama 0.35 (announced 2026-09-29), Ollama serves decision models that
+return typed answers with probabilities instead of text, through
+`POST /v1/systemone` on the local server. This matches Istinto's role and is
+the leading candidate for its runtime on the new reference machine. Nothing
+here is implemented or measured yet.
+
+One request carries a `state` and several named `questions`, and the model
+answers them all at once. Question types:
+
+- `choice` — one label from declared `criteria`, with per-label
+  `probabilities` and a `confidence`;
+- `noul` — a yes/no answer as a probability between 0 and 1;
+- `score` — a value on a declared ordered scale, with `probabilities` and a
+  `confidence`.
+
+Sketch of an Istinto request for a low-fuel alert (shape only, not final):
+
+```json
+{
+  "model": "tev1:0.8b",
+  "state": {"event": "fuel_low", "fuel": 10.0, "lap": 14, "position": 3},
+  "questions": {
+    "urgency": {
+      "type": "choice",
+      "instructions": "How fast must the engineer speak?",
+      "criteria": {"now": "Act this lap", "normal": "Soon", "calm": "Can wait"}
+    },
+    "speak": {"type": "noul", "instructions": "Should the radio open now?"},
+    "length": {
+      "type": "choice",
+      "instructions": "How much should the engineer say?",
+      "criteria": {"short": "One short call", "long": "A fuller message", "ask": "Ask the driver"}
+    }
+  }
+}
+```
+
+After the voice writes a line, a second request can ask `grounded` as a
+`noul`: does the line state anything that is not in `state`?
+
+How the answers would be used:
+
+- an answer outside the declared criteria is treated as a failure;
+- a low `confidence` makes the engineer cautious: hold, or keep it short;
+- the call is plain HTTP and JSON, so it needs only the Python standard
+  library, like the voice; the TypeSafe SDK is not required;
+- `src/raceengineer/decision.py` keeps the same questions; only who answers
+  them changes.
+
+Candidates published with the feature:
+
+| Model | Size | Source | Notes |
+| --- | --- | --- | --- |
+| `nimble` | 9B | Bespoke Labs | described as open source; licence to confirm |
+| `tev1` | 4B | Together AI | experimental; licence to confirm |
+| `tev1:0.8b` | 0.8B | Together AI | experimental; licence to confirm |
+
+Ollama reports about 91 ms per decision for `nimble` on a MacBook Pro M5 Max.
+That is not RaceEngineer evidence.
+
+Before selection:
+
+- confirm each licence allows free local use;
+- measure VRAM, latency, and accuracy on the reference machine, on race
+  questions, with the evaluation harness updated to the current flow;
+- compare with a general model constrained by an Ollama JSON schema
+  (`format`), for example the current `qwen3.5:0.8b`;
+- remember that a typed answer guarantees the format, not that the decision
+  is right.
+
+Source: https://ollama.com/blog/ollama-now-supports-jev-style-decision-models
 
 ## Constraints
 
