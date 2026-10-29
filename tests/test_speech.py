@@ -125,7 +125,7 @@ class SpeechTests(unittest.TestCase):
             with wave.open(str(path), "rb") as beep:
                 self.assertEqual((beep.getnchannels(), beep.getsampwidth()), (1, 2))
                 seconds = beep.getnframes() / beep.getframerate()
-        self.assertTrue(0.1 < seconds < 0.3, seconds)
+        self.assertTrue(0.4 < seconds < 0.5, seconds)
 
     def test_beep_plays_before_the_voice_and_can_be_skipped(self):
         for beep, expected in ((True, ["beep", "voice"]), (False, ["voice"])):

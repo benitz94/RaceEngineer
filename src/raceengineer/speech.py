@@ -19,9 +19,18 @@ import wave
 PIPER_NOTICE = "piper unavailable, using SAPI"
 ESPEAK_NOTICE = "piper unavailable, using espeak-ng"
 _NOTICE_SENT = False
-# Original two-tone radio-open chirp: (frequency Hz, seconds); 0 Hz is a gap.
-_BEEP_TONES = ((1400, 0.06), (0, 0.03), (1900, 0.08))
-_BEEP_RATE = 22050
+# Original radio-open jingle: (frequency Hz, seconds, level); 0 Hz is a gap.
+# Four short pure tones, C6 A5 D6 B5, soft first note. It ends on an
+# unresolved note with no tail, so the driver waits for the engineer's voice.
+_BEEP_TONES = (
+    (0, 0.03, 0.0),
+    (1046.50, 0.092, 0.30), (0, 0.012, 0.0),
+    (880.00, 0.080, 1.00), (0, 0.016, 0.0),
+    (1174.66, 0.082, 0.80), (0, 0.016, 0.0),
+    (987.77, 0.082, 0.75),
+    (0, 0.04, 0.0),
+)
+_BEEP_RATE = 44100
 
 _SAPI_SCRIPT = r"""
 $ErrorActionPreference = 'Stop'
@@ -199,14 +208,16 @@ def _play_wav(path: Path) -> None:
 
 
 def write_beep(path: Path) -> None:
-    """Write the radio-open chirp as a mono 16-bit WAV file."""
-    fade = int(_BEEP_RATE * 0.005)
+    """Write the radio-open jingle as a mono 16-bit WAV file."""
+    attack = int(_BEEP_RATE * 0.004)
+    release = int(_BEEP_RATE * 0.012)
     frames = bytearray()
-    for frequency, seconds in _BEEP_TONES:
+    for frequency, seconds, level in _BEEP_TONES:
         count = int(_BEEP_RATE * seconds)
         for index in range(count):
-            envelope = min(1.0, index / fade, (count - index) / fade)
-            sample = 0.35 * envelope * math.sin(2 * math.pi * frequency * index / _BEEP_RATE)
+            envelope = min(1.0, index / attack, (count - index) / release)
+            phase = 2 * math.pi * frequency * index / _BEEP_RATE
+            sample = 0.6 * level * envelope * (math.sin(phase) + 0.04 * math.sin(3 * phase)) / 1.04
             frames += struct.pack("<h", int(sample * 32767))
     with wave.open(str(path), "wb") as output:
         output.setnchannels(1)
