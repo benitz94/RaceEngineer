@@ -9,6 +9,10 @@ neither the driver nor the engineer is caught by surprise. The beep is an
 original synthesized chirp, not a recording of any broadcast sound. It plays
 right before the voice.
 
+The engineer opens the radio on his own initiative whenever he has something
+to tell the driver: a strategy change, tyre wear, fuel, a rival, a mood
+check. Istinto decides when. Every such call opens with the beep.
+
 When the driver presses the physical push-to-talk button, a beep opens the
 driver's channel as well (planned with the button).
 
